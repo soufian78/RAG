@@ -1,7 +1,9 @@
-from pathlib import Path
-
 from chunker import chunk_python, chunk_markdown
 from models import Chunk
+import json
+import pickle
+from pathlib import Path
+from rank_bm25 import BM25Okapi
 
 
 def index_files(
@@ -54,3 +56,28 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
     ]
 
     return BM25Okapi(tokenized_corpus)
+
+def save_index(chunks: list[Chunk], bm25: BM25Okapi):
+    output_dir = Path("data/processed")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    chunks_data = [chunk.model_dump() for chunk in chunks]
+    with open(output_dir / "chunks.json", "w", encoding="utf-8") as f:
+        json.dump(chunks_data, f, ensure_ascii=False)
+
+    with open(output_dir / "bm25.pkl", "wb") as f:
+        pickle.dump(bm25, f)
+        
+def run_index(raw_path: str = "data/raw", max_chunk: int = 2000)-> None:
+    chunks = index_files(raw_path, max_chunk)
+    
+    if not chunks:
+        print("No chnks found.")
+        return
+    bm25 = build_bm25(chunks)
+    save_index(chunks, bm25)
+    print(f"Indexing complete: {len(chunks)} chunks created.")
+     
+    
+if __name__ == "__main__":
+    run_index()

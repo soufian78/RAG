@@ -88,7 +88,7 @@ def chunk_markdown(text: str, filr_path: str, max_chunk: int):
         end = start + len(section)
         if (len(section) <= max_chunk):
             chunks.append(Chunk(file_path = filr_path,
-                                start = star,
+                                start = start,
                                 end = end,
                                 content = section))
         else:

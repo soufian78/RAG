@@ -1,6 +1,13 @@
 from rank_bm25 import BM25Okapi
 from models import Chunk, MinimalSource
 
+import json
+import pickle
+from pathlib import Path
+
+from rank_bm25 import BM25Okapi
+
+from models import Chunk
 
 
 def tokenize(text: str):
@@ -26,4 +33,22 @@ def search(
                                     first_character_index = chunk.start,
                                     last_character_index = chunk.end))
     return result
-    
+
+
+
+
+def load_index() -> tuple[list[Chunk], BM25Okapi]:
+    input_dir = Path("data/processed")
+
+    with open(input_dir / "chunks.json", "r", encoding="utf-8") as f:
+        chunks_data = json.load(f)
+
+    chunks = [
+        Chunk(**data)
+        for data in chunks_data
+    ]
+
+    with open(input_dir / "bm25.pkl", "rb") as f:
+        bm25 = pickle.load(f)
+
+    return chunks, bm25
