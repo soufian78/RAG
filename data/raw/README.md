@@ -1,8 +1,11 @@
-#first3
+# Python
 
-##second
-jjji
-jiji
+The hello function prints a message.
 
-###third
+# Database
 
+MongoDB stores documents.
+
+# GPU
+
+GPU memory is used by the model.
