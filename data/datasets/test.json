@@ -1,0 +1,16 @@
+{
+  "rag_questions": [
+    {
+      "question_id": "q1",
+      "question": "hello function"
+    },
+    {
+      "question_id": "q2",
+      "question": "GPU memory"
+    },
+    {
+      "question_id": "q3",
+      "question": "MongoDB documents"
+    }
+  ]
+}

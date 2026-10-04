@@ -4,7 +4,7 @@ from pathlib import Path
 
 from rank_bm25 import BM25Okapi
 
-from models import RagDataset, Chunk, MinimalSource, MinimalSearchResults, StudentSearchResults
+from .models import RagDataset, Chunk, MinimalSource, MinimalSearchResults, StudentSearchResults
 def tokenize(text: str) -> list[str]:
     return text.lower().split()
 
@@ -102,44 +102,57 @@ def retrieve(
     )
 
 
-def search_dataset(dataset_path: str, chunks: list[Chunk], bm25: BM25Okapi, k: int = 5)->list[StudentSearchResults]:
+def search_dataset(dataset_path: str, chunks: list[Chunk], bm25: BM25Okapi, k: int = 5)->StudentSearchResults:
     with open(dataset_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-        dataset = RagDataset(**data)
+    dataset = RagDataset(**data)
         
-        results: list[MinimalSearchResults] = []
-        for question in dataset.rag_questions:
-            result = retrieve(question_id=question.question_id,
-                              query=question.question,
-                              chunks=chunks,
-                              k = k)
-            results.append(result)
+    results: list[MinimalSearchResults] = []
+    for question in dataset.rag_questions:
+        result = retrieve(question_id=question.question_id,
+                          query=question.question,
+                          chunks=chunks,
+                          bm25=bm25,
+                          k = k)
+        results.append(result)
         
-        return StudentSearchResults(search_results = results, k=k)
-            
+    return StudentSearchResults(search_results = results, k=k)
+
+
 
 def save_search_results(results: StudentSearchResults,
                         dataset_path: str,
                         save_dir) -> Path:
     output_dir = Path(save_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-        
+    output_path = output_dir / Path(dataset_path).name
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            results.model_dump(),
+            f,
+            indent=2,
+            ensure_ascii=False
+        )
+    return output_path
+
+def run_search_dataset(dataset_path: str,
+                       save_directory: str,
+                       k: int = 5)->Path:
+    chunks, bm25 = load_index()
+    results = search_dataset(dataset_path=dataset_path, chunks=chunks, bm25=bm25, k=k)
+    output_path = save_search_results(results=results, dataset_path=dataset_path, save_dir=save_directory)
+    return output_path
     
 
 
 
 
-
-
 if __name__ == "__main__":
-    chunks, bm25 = load_index()
-
-    result = retrieve(
-        question_id="q1",
-        query="hello function",
-        chunks=chunks,
-        bm25=bm25,
+    output_path = run_search_dataset(
+        dataset_path="data/datasets/test.json",
+        save_directory="data/output/search_results/test",
         k=3,
     )
 
-    print(result.model_dump_json(indent=2))
+    print("Saved to:", output_path)
