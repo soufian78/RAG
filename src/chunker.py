@@ -1,6 +1,6 @@
 import ast
 import re
-from models import Chunk
+from .models import Chunk
 
 
 def chunk_python(

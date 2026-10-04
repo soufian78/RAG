@@ -1,5 +1,5 @@
-from chunker import chunk_python, chunk_markdown
-from models import Chunk
+from .chunker import chunk_python, chunk_markdown
+from .models import Chunk
 import json
 import pickle
 from pathlib import Path

@@ -5,6 +5,9 @@ from pathlib import Path
 from rank_bm25 import BM25Okapi
 
 from .models import RagDataset, Chunk, MinimalSource, MinimalSearchResults, StudentSearchResults
+
+import uuid
+
 def tokenize(text: str) -> list[str]:
     return text.lower().split()
 
@@ -144,6 +147,16 @@ def run_search_dataset(dataset_path: str,
     output_path = save_search_results(results=results, dataset_path=dataset_path, save_dir=save_directory)
     return output_path
     
+
+def run_search(
+    query: str,
+    k: int = 5) -> MinimalSearchResults:
+    chunks, bm25 = load_index()
+    return retrieve(question_id=str(uuid.uuid4()),
+                    query=query,
+                    chunks=chunks,
+                    bm25=bm25,
+                    k=k)
 
 
 
