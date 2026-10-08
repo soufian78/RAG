@@ -7,6 +7,10 @@ from rank_bm25 import BM25Okapi
 from .models import RagDataset, Chunk, MinimalSource, MinimalSearchResults, StudentSearchResults
 
 import uuid
+from functools import lru_cache
+
+
+
 
 def tokenize(text: str) -> list[str]:
     return text.lower().split()
@@ -62,13 +66,14 @@ def search_source(
     ]
 
 
+@lru_cache(maxsize=1)
 def load_index() -> tuple[list[Chunk], BM25Okapi]:
     input_dir = Path("data/processed")
 
     with open(
         input_dir / "chunks.json",
         "r",
-        encoding="utf-8",
+        encoding="utf-8"
     ) as f:
         chunks_data = json.load(f)
 
@@ -81,7 +86,6 @@ def load_index() -> tuple[list[Chunk], BM25Okapi]:
         bm25 = pickle.load(f)
 
     return chunks, bm25
-
 
 def retrieve(
     question_id: str,

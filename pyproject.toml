@@ -8,4 +8,13 @@ dependencies = [
     "fire>=0.7.1",
     "pydantic>=2.13.5",
     "rank-bm25>=0.2.2",
+    "torch>=2.14.1",
+    "transformers>=5.19.0",
 ]
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
