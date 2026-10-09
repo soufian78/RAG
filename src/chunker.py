@@ -73,33 +73,54 @@ def chunk_python(
     return chunks
 
 
-def chunk_markdown(text: str, filr_path: str, max_chunk: int):
-    chunks = [] 
+def chunk_markdown(
+    text: str,
+    file_path: str,
+    max_chunk: int
+) -> list[Chunk]:
+
+    if max_chunk <= 0:
+        return []
+
+    chunks: list[Chunk] = []
+
     sections = re.split(
-            r"(?=^#{1,6}\s)",
-            text,
-            flags=re.MULTILINE
-        )
+        r"(?=^#{1,6}\s)",
+        text,
+        flags=re.MULTILINE
+    )
+
     current_pos = 0
+
     for section in sections:
         if not section:
             continue
-        start = text.find(section, current_pos)
-        end = start + len(section)
-        if (len(section) <= max_chunk):
-            chunks.append(Chunk(file_path = filr_path,
-                                start = start,
-                                end = end,
-                                content = section))
-        else:
-            for i in range(0, len(section),max_chunk ):
-                part = section[i: i+max_chunk]
-                part_start = start +i
-                part_end = part_start + len(part)
-                chunks.append(Chunk(file_path = filr_path,
-                                    start = part_start,
-                                    end = part_end,
-                                    content = part))
-        current_pos = end
-    return chunks
 
+        start = current_pos
+        end = start + len(section)
+
+        while start < end:
+            limit = min(start + max_chunk, end)
+            chunk_end = limit
+
+            if limit < end:
+                # Chercher une séparation entre paragraphes
+                split_pos = text.rfind("\n\n", start, limit)
+
+                if split_pos > start:
+                    chunk_end = split_pos + 2
+
+            chunks.append(
+                Chunk(
+                    file_path=file_path,
+                    start=start,
+                    end=chunk_end,
+                    content=text[start:chunk_end]
+                )
+            )
+
+            start = chunk_end
+
+        current_pos = end
+
+    return chunks

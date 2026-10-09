@@ -15,7 +15,6 @@ from functools import lru_cache
 def tokenize(text: str) -> list[str]:
     return text.lower().split()
 
-
 def search(
     query: str,
     chunks: list[Chunk],
@@ -23,19 +22,26 @@ def search(
     k: int = 5,
 ) -> list[Chunk]:
 
-    tokens = tokenize(query)
+    if k <= 0 or not query.strip():
+        return []
 
+    tokens = tokenize(query)
     scores = bm25.get_scores(tokens)
 
     ranked_indices = sorted(
         range(len(scores)),
-        key=lambda i: scores[i],
+        key=lambda i: (
+            float(scores[i])
+            + (
+                0.5
+                if "/docs/" in chunks[i].file_path
+                else 0.0
+            )
+        ),
         reverse=True,
     )
 
-    top_indices = ranked_indices[:k]
-
-    return [chunks[i] for i in top_indices]
+    return [chunks[i] for i in ranked_indices[:k]]
 
 
 def chunk_to_source(chunk: Chunk) -> MinimalSource:

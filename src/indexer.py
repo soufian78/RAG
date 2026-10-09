@@ -48,12 +48,38 @@ def index_files(
 def tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z0-9_]+", text.lower())
 
+import re
+from pathlib import Path
+from rank_bm25 import BM25Okapi
+
 
 def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
-    tokenized_corpus = [
-        tokenize(chunk.content)
-        for chunk in chunks
-    ]
+    tokenized_corpus = []
+    current_headings = {}
+
+    for chunk in chunks:
+        tokens = tokenize(chunk.content)
+
+        # Garder la pondération du nom de fichier
+        filename = Path(chunk.file_path).stem
+        tokens += tokenize(filename) * 3
+
+        # Chercher les titres Markdown dans le chunk
+        if chunk.file_path.endswith(".md"):
+            headings = re.findall(
+                r"^#{1,6}\s+(.+)$",
+                chunk.content,
+                flags=re.MULTILINE
+            )
+
+            if headings:
+                current_headings[chunk.file_path] = headings[-1]
+
+            heading = current_headings.get(chunk.file_path, "")
+
+            tokens += tokenize(heading) * 2
+
+        tokenized_corpus.append(tokens)
 
     return BM25Okapi(tokenized_corpus)
 
