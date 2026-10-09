@@ -1,1 +1,24 @@
-null
+[
+  {
+    "question": "What does the hello function do?",
+    "answer": "The hello function prints a message.",
+    "retrieved_sources": [
+      {
+        "file_path": "data/raw/README.md",
+        "first_character_index": 0,
+        "last_character_index": 48
+      },
+      {
+        "file_path": "data/raw/README.md",
+        "first_character_index": 87,
+        "last_character_index": 126
+      },
+      {
+        "file_path": "data/raw/README.md",
+        "first_character_index": 48,
+        "last_character_index": 87
+      }
+    ],
+    "question_id": "q1"
+  }
+]

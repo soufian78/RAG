@@ -174,6 +174,7 @@ def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
         result["question_id"] = question.question_id
 
         results.append(result)
+        return results
 
 def save_generation_results(
     results: list[dict],
@@ -206,6 +207,7 @@ def run_generation_dataset(
         dataset_path=dataset_path,
         k=k
     )
+    print("DEBUG:", results)
 
     output_path = save_generation_results(
         results=results,

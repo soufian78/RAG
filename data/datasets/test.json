@@ -2,7 +2,7 @@
   "rag_questions": [
     {
       "question_id": "q1",
-      "question": "hello function"
+      "question": "What does the hello function do?"
     },
     {
       "question_id": "q2",

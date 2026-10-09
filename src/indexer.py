@@ -4,7 +4,7 @@ import json
 import pickle
 from pathlib import Path
 from rank_bm25 import BM25Okapi
-
+import re
 
 def index_files(
     raw_path: str,
@@ -46,7 +46,7 @@ def index_files(
 
 
 def tokenize(text: str) -> list[str]:
-    return text.lower().split()
+    return re.findall(r"[a-z0-9_]+", text.lower())
 
 
 def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
