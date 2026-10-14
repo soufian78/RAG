@@ -9,11 +9,11 @@ from .models import RagDataset, Chunk, MinimalSource, MinimalSearchResults, Stud
 import uuid
 from functools import lru_cache
 
-
+import re
 
 
 def tokenize(text: str) -> list[str]:
-    return text.lower().split()
+    return re.findall(r"[a-z0-9_]+", text.lower())
 
 def search(
     query: str,

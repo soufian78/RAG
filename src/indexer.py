@@ -48,9 +48,7 @@ def index_files(
 def tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z0-9_]+", text.lower())
 
-import re
-from pathlib import Path
-from rank_bm25 import BM25Okapi
+
 
 
 def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
@@ -60,11 +58,9 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
     for chunk in chunks:
         tokens = tokenize(chunk.content)
 
-        # Garder la pondération du nom de fichier
         filename = Path(chunk.file_path).stem
         tokens += tokenize(filename) * 3
 
-        # Chercher les titres Markdown dans le chunk
         if chunk.file_path.endswith(".md"):
             headings = re.findall(
                 r"^#{1,6}\s+(.+)$",
@@ -95,6 +91,9 @@ def save_index(chunks: list[Chunk], bm25: BM25Okapi):
         pickle.dump(bm25, f)
         
 def run_index(raw_path: str = "data/raw", max_chunk: int = 2000)-> None:
+    if max_chunk > 2000:
+        print("max_chunk is too high!")
+        return
     chunks = index_files(raw_path, max_chunk)
     
     if not chunks:

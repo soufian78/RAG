@@ -12,6 +12,19 @@ class MinimalSource(BaseModel):
     first_character_index: int
     last_character_index: int
     
+class UnansweredQuestion(BaseModel):
+    question_id: str
+    question: str
+
+class AnsweredQuestion(UnansweredQuestion):
+    sources: list[MinimalSource]
+    answer: str 
+
+
+class RagDataset(BaseModel):
+    rag_questions: list[
+        AnsweredQuestion | UnansweredQuestion
+    ]
 
 class MinimalSearchResults(BaseModel):
     question_id: str
@@ -22,18 +35,3 @@ class MinimalSearchResults(BaseModel):
 class StudentSearchResults(BaseModel):
     search_results: list[MinimalSearchResults]
     k: int
-
-
-class UnansweredQuestion(BaseModel):
-    question_id: str
-    question: str
-    
-class AnsweredQuestion(UnansweredQuestion):
-    sources: list[MinimalSource]
-    answer: str
-    
-    
-class RagDataset(BaseModel):
-    rag_questions: list[
-        AnsweredQuestion | UnansweredQuestion
-    ]
