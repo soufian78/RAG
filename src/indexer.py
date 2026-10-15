@@ -46,8 +46,13 @@ def index_files(
 
 
 def tokenize(text: str) -> list[str]:
-    return re.findall(r"[a-z0-9_]+", text.lower())
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
 
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+
+    text = text.replace("_", " ")
+
+    return re.findall(r"[a-z0-9]+", text.lower())
 
 
 
@@ -59,7 +64,7 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
         tokens = tokenize(chunk.content)
 
         filename = Path(chunk.file_path).stem
-        tokens += tokenize(filename) * 3
+        tokens += tokenize(filename) * 5
 
         if chunk.file_path.endswith(".md"):
             headings = re.findall(
@@ -73,7 +78,7 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
 
             heading = current_headings.get(chunk.file_path, "")
 
-            tokens += tokenize(heading) * 2
+            tokens += tokenize(heading)
 
         tokenized_corpus.append(tokens)
 
@@ -94,6 +99,9 @@ def run_index(raw_path: str = "data/raw", max_chunk: int = 2000)-> None:
     if max_chunk > 2000:
         print("max_chunk is too high!")
         return
+    if max_chunk < 100:
+        print("max_chunk is too low!")
+        return
     chunks = index_files(raw_path, max_chunk)
     
     if not chunks:
@@ -102,7 +110,6 @@ def run_index(raw_path: str = "data/raw", max_chunk: int = 2000)-> None:
     bm25 = build_bm25(chunks)
     save_index(chunks, bm25)
     print(f"Indexing complete: {len(chunks)} chunks created.")
-     
-    
+
 if __name__ == "__main__":
     run_index()

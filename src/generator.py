@@ -155,26 +155,24 @@ def load_model():
 
     return tokenizer, model
 
-def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
 
+def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
     with open(dataset_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     dataset = RagDataset(**data)
-
     results = []
 
     for question in dataset.rag_questions:
-
         result = answer_question(
             question=question.question,
             k=k
         )
 
         result["question_id"] = question.question_id
-
         results.append(result)
-        return results
+
+    return results
 
 def save_generation_results(
     results: list[dict],

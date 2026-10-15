@@ -13,7 +13,17 @@ import re
 
 
 def tokenize(text: str) -> list[str]:
-    return re.findall(r"[a-z0-9_]+", text.lower())
+    # Séparer camelCase : getUser -> get User
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+
+    # Séparer les acronymes suivis d'un mot : HTTPServer -> HTTP Server
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+
+    # Séparer les mots avec underscore et autres séparateurs
+    text = text.replace("_", " ")
+
+    # Récupérer les mots en minuscules
+    return re.findall(r"[a-z0-9]+", text.lower())
 
 def search(
     query: str,
