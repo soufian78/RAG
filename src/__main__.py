@@ -3,6 +3,7 @@ import fire
 
 from .retriever import run_search_dataset,run_search
 from .indexer import run_index
+from .generator import run_generation_dataset
 
 class CLI:
     def index(self,
@@ -31,7 +32,9 @@ class CLI:
         )
 
         print(f"Saved to: {output_path}")
-
+    def answer_dataset(self, student_search_results_path=, save_directory ):
+        run_generation_dataset(dataset_path=student_search_results_path, save_directory=save_directory)
+        
 
 
 if __name__ == "__main__":

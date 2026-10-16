@@ -77,7 +77,8 @@ def generate_answer(prompt: str) -> str:
     )
 
     inputs = tokenizer(text, return_tensors="pt")
-
+# with torch.no_grad
+# torch.set_num_threads()
     outputs = model.generate(
         **inputs,
         max_new_tokens=40,
