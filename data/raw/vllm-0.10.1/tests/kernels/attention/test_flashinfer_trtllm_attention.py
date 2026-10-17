@@ -9,8 +9,9 @@ import torch
 from vllm.platforms import current_platform
 
 if not current_platform.is_device_capability(100):
-    pytest.skip("This TRTLLM kernel requires NVIDIA Blackwell.",
-                allow_module_level=True)
+    pytest.skip(
+        "This TRTLLM kernel requires NVIDIA Blackwell.", allow_module_level=True
+    )
 
 FLOAT32_BYTES = torch.finfo(torch.float).bits // 8
 
@@ -63,7 +64,7 @@ def test_flashinfer_trtllm_decode_with_baseline(
     torch.set_default_device("cuda")
     current_platform.seed_everything(0)
 
-    kv_lens = torch.randint(1, MAX_KV_LEN, (batch_size, ), dtype=torch.int32)
+    kv_lens = torch.randint(1, MAX_KV_LEN, (batch_size,), dtype=torch.int32)
     kv_lens[-1] = MAX_KV_LEN
     max_kv_len = torch.max(kv_lens).item()
     num_seqs = len(kv_lens)
@@ -86,14 +87,14 @@ def test_flashinfer_trtllm_decode_with_baseline(
     key_value_cache = torch.randn(kv_cache_shape, dtype=dtype)
     kv_scale = 1.0
     if kv_cache_dtype is current_platform.fp8_dtype():
-        key_value_cache, kv_scale = to_float8(key_value_cache,
-                                              current_platform.fp8_dtype())
+        key_value_cache, kv_scale = to_float8(
+            key_value_cache, current_platform.fp8_dtype()
+        )
 
     max_num_blocks_per_seq = (max_kv_len + block_size - 1) // block_size
-    block_tables = torch.randint(0,
-                                 NUM_BLOCKS,
-                                 (num_seqs, max_num_blocks_per_seq),
-                                 dtype=torch.int32)
+    block_tables = torch.randint(
+        0, NUM_BLOCKS, (num_seqs, max_num_blocks_per_seq), dtype=torch.int32
+    )
     k_scale = v_scale = kv_scale
     kv_indptr = [0]
     kv_indices = []
@@ -117,26 +118,25 @@ def test_flashinfer_trtllm_decode_with_baseline(
     wrapper = flashinfer.BatchDecodeWithPagedKVCacheWrapper(
         workspace_buffer,
         kv_layout,
-        use_tensor_cores=((num_query_heads // num_kv_heads) > 4))
-    wrapper.plan(kv_indptr,
-                 kv_indices,
-                 kv_last_page_lens,
-                 num_query_heads,
-                 num_kv_heads,
-                 head_size,
-                 block_size,
-                 "NONE",
-                 sm_scale=scale,
-                 q_data_type=dtype,
-                 kv_data_type=kv_cache_dtype,
-                 logits_soft_cap=soft_cap)
+        use_tensor_cores=((num_query_heads // num_kv_heads) > 4),
+    )
+    wrapper.plan(
+        kv_indptr,
+        kv_indices,
+        kv_last_page_lens,
+        num_query_heads,
+        num_kv_heads,
+        head_size,
+        block_size,
+        "NONE",
+        sm_scale=scale,
+        q_data_type=dtype,
+        kv_data_type=kv_cache_dtype,
+        logits_soft_cap=soft_cap,
+    )
 
     output = torch.empty(query.shape, dtype=dtype)
-    wrapper.run(query,
-                key_value_cache,
-                k_scale=k_scale,
-                v_scale=v_scale,
-                out=output)
+    wrapper.run(query, key_value_cache, k_scale=k_scale, v_scale=v_scale, out=output)
 
     # TRTLLM Decode
     kv_lens_tensor = torch.tensor(kv_lens, dtype=torch.int32)
@@ -153,8 +153,9 @@ def test_flashinfer_trtllm_decode_with_baseline(
         out=output_trtllm,
     )
 
-    torch.testing.assert_close(output, output_trtllm, atol=1e-2, rtol=1e-2), \
-        f"{torch.max(torch.abs(output - output_trtllm))}"
+    torch.testing.assert_close(
+        output, output_trtllm, atol=1e-2, rtol=1e-2
+    ), f"{torch.max(torch.abs(output - output_trtllm))}"
 
 
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
@@ -178,21 +179,24 @@ def test_flashinfer_trtllm_prefill_with_baseline(
 ) -> None:
     kv_cache_dtype = dtype if kv_cache_dtype is None else kv_cache_dtype
     if dtype != kv_cache_dtype:
-        pytest.skip(f"Not supported dtype({dtype}) with "
-                    "kv_cache_dtype({kv_cache_dtype})")
+        pytest.skip(
+            f"Not supported dtype({dtype}) with " "kv_cache_dtype({kv_cache_dtype})"
+        )
 
     torch.set_default_device("cuda")
     current_platform.seed_everything(0)
 
-    q_lens = torch.randint(1, MAX_Q_LEN, (batch_size, ), dtype=torch.int32)
+    q_lens = torch.randint(1, MAX_Q_LEN, (batch_size,), dtype=torch.int32)
     q_lens[-1] = MAX_Q_LEN
     max_q_len = torch.max(q_lens).item()
-    q_indptr = torch.cat([
-        torch.tensor([0], dtype=torch.int32),
-        torch.cumsum(q_lens, dim=0, dtype=torch.int32),
-    ])
+    q_indptr = torch.cat(
+        [
+            torch.tensor([0], dtype=torch.int32),
+            torch.cumsum(q_lens, dim=0, dtype=torch.int32),
+        ]
+    )
 
-    kv_lens = torch.randint(0, MAX_KV_LEN, (batch_size, ), dtype=torch.int32)
+    kv_lens = torch.randint(0, MAX_KV_LEN, (batch_size,), dtype=torch.int32)
     kv_lens[-1] = MAX_KV_LEN
 
     seq_lens = kv_lens + q_lens
@@ -205,10 +209,9 @@ def test_flashinfer_trtllm_prefill_with_baseline(
 
     scale = head_size**-0.5
 
-    query = torch.randn(torch.sum(q_lens).item(),
-                        num_query_heads,
-                        head_size,
-                        dtype=dtype)
+    query = torch.randn(
+        torch.sum(q_lens).item(), num_query_heads, head_size, dtype=dtype
+    )
 
     kv_cache_shape = None
     if kv_layout == "NHD":
@@ -220,14 +223,14 @@ def test_flashinfer_trtllm_prefill_with_baseline(
     key_value_cache = torch.randn(kv_cache_shape, dtype=dtype)
     kv_scale = 1.0
     if kv_cache_dtype is current_platform.fp8_dtype():
-        key_value_cache, kv_scale = to_float8(key_value_cache,
-                                              current_platform.fp8_dtype())
+        key_value_cache, kv_scale = to_float8(
+            key_value_cache, current_platform.fp8_dtype()
+        )
 
     max_num_blocks_per_seq = (max_seq_len + block_size - 1) // block_size
-    block_tables = torch.randint(0,
-                                 NUM_BLOCKS,
-                                 (num_seqs, max_num_blocks_per_seq),
-                                 dtype=torch.int32)
+    block_tables = torch.randint(
+        0, NUM_BLOCKS, (num_seqs, max_num_blocks_per_seq), dtype=torch.int32
+    )
     k_scale = v_scale = kv_scale
     kv_indptr = [0]
     kv_indices = []
@@ -249,27 +252,26 @@ def test_flashinfer_trtllm_prefill_with_baseline(
 
     workspace_buffer = torch.zeros(128 * 1024 * 1024, dtype=torch.int8)
     wrapper = flashinfer.BatchPrefillWithPagedKVCacheWrapper(
-        workspace_buffer, kv_layout)
-    wrapper.plan(q_indptr,
-                 kv_indptr,
-                 kv_indices,
-                 kv_last_page_lens,
-                 num_query_heads,
-                 num_kv_heads,
-                 head_size,
-                 block_size,
-                 causal=True,
-                 sm_scale=scale,
-                 q_data_type=dtype,
-                 kv_data_type=kv_cache_dtype,
-                 logits_soft_cap=soft_cap)
+        workspace_buffer, kv_layout
+    )
+    wrapper.plan(
+        q_indptr,
+        kv_indptr,
+        kv_indices,
+        kv_last_page_lens,
+        num_query_heads,
+        num_kv_heads,
+        head_size,
+        block_size,
+        causal=True,
+        sm_scale=scale,
+        q_data_type=dtype,
+        kv_data_type=kv_cache_dtype,
+        logits_soft_cap=soft_cap,
+    )
 
     output = torch.empty(query.shape, dtype=dtype)
-    wrapper.run(query,
-                key_value_cache,
-                k_scale=k_scale,
-                v_scale=v_scale,
-                out=output)
+    wrapper.run(query, key_value_cache, k_scale=k_scale, v_scale=v_scale, out=output)
 
     # TRTLLM Decode
     output_trtllm = torch.empty(query.shape, dtype=dtype)
@@ -289,5 +291,6 @@ def test_flashinfer_trtllm_prefill_with_baseline(
         out=output_trtllm,
     )
 
-    torch.testing.assert_close(output, output_trtllm, atol=1e-2, rtol=1e-2), \
-        f"{torch.max(torch.abs(output - output_trtllm))}"
+    torch.testing.assert_close(
+        output, output_trtllm, atol=1e-2, rtol=1e-2
+    ), f"{torch.max(torch.abs(output - output_trtllm))}"

@@ -5,8 +5,7 @@ import pytest
 from torch import nn
 
 from vllm.config import LoadConfig, ModelConfig
-from vllm.model_executor.model_loader import (get_model_loader,
-                                              register_model_loader)
+from vllm.model_executor.model_loader import get_model_loader, register_model_loader
 from vllm.model_executor.model_loader.base_loader import BaseModelLoader
 
 
@@ -19,8 +18,7 @@ class CustomModelLoader(BaseModelLoader):
     def download_model(self, model_config: ModelConfig) -> None:
         pass
 
-    def load_weights(self, model: nn.Module,
-                     model_config: ModelConfig) -> None:
+    def load_weights(self, model: nn.Module, model_config: ModelConfig) -> None:
         pass
 
 

@@ -207,9 +207,9 @@ def convert_sharegpt_to_openai(
 
         # Convert each message in the conversation, up to max_turns if specified
         for i, turn in enumerate(conversations):
-            assert "from" in turn and "value" in turn, (
-                f"Invalid conversation ID {conv_id} - missing 'from' or 'value'"
-            )
+            assert (
+                "from" in turn and "value" in turn
+            ), f"Invalid conversation ID {conv_id} - missing 'from' or 'value'"
 
             role = None
             turn_from = turn["from"]
@@ -221,9 +221,9 @@ def convert_sharegpt_to_openai(
             elif turn_from == "system":
                 role = "system"
 
-            assert role is not None, (
-                f"Invalid conversation ID {conv_id} - 'from'='{turn_from}' is invalid"
-            )
+            assert (
+                role is not None
+            ), f"Invalid conversation ID {conv_id} - 'from'='{turn_from}' is invalid"
 
             if i == 0 and role != "user":
                 # If the first message is from assistant (gpt), skip it.

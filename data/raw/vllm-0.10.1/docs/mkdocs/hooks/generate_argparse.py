@@ -32,9 +32,7 @@ class MarkdownFormatter(HelpFormatter):
     """Custom formatter that generates markdown for argument groups."""
 
     def __init__(self, prog, starting_heading_level=3):
-        super().__init__(prog,
-                         max_help_position=float('inf'),
-                         width=float('inf'))
+        super().__init__(prog, max_help_position=float("inf"), width=float("inf"))
         self._section_heading_prefix = "#" * starting_heading_level
         self._argument_heading_prefix = "#" * (starting_heading_level + 1)
         self._markdown_output = []
@@ -56,8 +54,7 @@ class MarkdownFormatter(HelpFormatter):
 
     def add_arguments(self, actions):
         for action in actions:
-            if (len(action.option_strings) == 0
-                    or "--help" in action.option_strings):
+            if len(action.option_strings) == 0 or "--help" in action.option_strings:
                 continue
 
             option_strings = f'`{"`, `".join(action.option_strings)}`'
@@ -66,13 +63,10 @@ class MarkdownFormatter(HelpFormatter):
 
             if choices := action.choices:
                 choices = f'`{"`, `".join(str(c) for c in choices)}`'
-                self._markdown_output.append(
-                    f"Possible choices: {choices}\n\n")
-            elif ((metavar := action.metavar)
-                  and isinstance(metavar, (list, tuple))):
+                self._markdown_output.append(f"Possible choices: {choices}\n\n")
+            elif (metavar := action.metavar) and isinstance(metavar, (list, tuple)):
                 metavar = f'`{"`, `".join(str(m) for m in metavar)}`'
-                self._markdown_output.append(
-                    f"Possible choices: {metavar}\n\n")
+                self._markdown_output.append(f"Possible choices: {metavar}\n\n")
 
             if action.help:
                 self._markdown_output.append(f"{action.help}\n\n")
@@ -87,7 +81,7 @@ class MarkdownFormatter(HelpFormatter):
 
 def create_parser(add_cli_args, **kwargs) -> FlexibleArgumentParser:
     """Create a parser for the given class with markdown formatting.
-    
+
     Args:
         cls: The class to create a parser for
         **kwargs: Additional keyword arguments to pass to `cls.add_cli_args`.
@@ -114,24 +108,17 @@ def on_startup(command: Literal["build", "gh-deploy", "serve"], dirty: bool):
 
     # Create parsers to document
     parsers = {
-        "engine_args":
-        create_parser(EngineArgs.add_cli_args),
-        "async_engine_args":
-        create_parser(AsyncEngineArgs.add_cli_args, async_args_only=True),
-        "serve":
-        create_parser(cli_args.make_arg_parser),
-        "chat":
-        create_parser(ChatCommand.add_cli_args),
-        "complete":
-        create_parser(CompleteCommand.add_cli_args),
-        "bench_latency":
-        create_parser(latency.add_cli_args),
-        "bench_throughput":
-        create_parser(throughput.add_cli_args),
-        "bench_serve":
-        create_parser(serve.add_cli_args),
-        "run-batch":
-        create_parser(run_batch.make_arg_parser),
+        "engine_args": create_parser(EngineArgs.add_cli_args),
+        "async_engine_args": create_parser(
+            AsyncEngineArgs.add_cli_args, async_args_only=True
+        ),
+        "serve": create_parser(cli_args.make_arg_parser),
+        "chat": create_parser(ChatCommand.add_cli_args),
+        "complete": create_parser(CompleteCommand.add_cli_args),
+        "bench_latency": create_parser(latency.add_cli_args),
+        "bench_throughput": create_parser(throughput.add_cli_args),
+        "bench_serve": create_parser(serve.add_cli_args),
+        "run-batch": create_parser(run_batch.make_arg_parser),
     }
 
     # Generate documentation for each parser

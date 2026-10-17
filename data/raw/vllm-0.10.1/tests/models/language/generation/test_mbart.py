@@ -34,32 +34,31 @@ def run_test(
     tensor_parallel_size: int,
     distributed_executor_backend: Optional[str] = None,
 ) -> None:
-    '''
+    """
     Test the vLLM mBART model by validating it against HuggingFace (HF).
     (Docstring content is omitted for brevity)
-    '''
+    """
 
     vllm_prompts = prompts
     if decoder_prompt_type == DecoderPromptType.NONE:
-        vllm_prompts = [{
-            "encoder_prompt": p['encoder_prompt'],
-            "decoder_prompt": ""
-        } for p in prompts]
+        vllm_prompts = [
+            {"encoder_prompt": p["encoder_prompt"], "decoder_prompt": ""}
+            for p in prompts
+        ]
 
-    vllm_kwargs = {
-        "hf_overrides": {
-            "architectures": ["MBartForConditionalGeneration"]
-        }
-    }
+    vllm_kwargs = {"hf_overrides": {"architectures": ["MBartForConditionalGeneration"]}}
 
-    with vllm_runner(model,
-                     dtype=dtype,
-                     tensor_parallel_size=tensor_parallel_size,
-                     distributed_executor_backend=distributed_executor_backend,
-                     enforce_eager=True,
-                     **vllm_kwargs) as vllm_model:  # type: ignore
+    with vllm_runner(
+        model,
+        dtype=dtype,
+        tensor_parallel_size=tensor_parallel_size,
+        distributed_executor_backend=distributed_executor_backend,
+        enforce_eager=True,
+        **vllm_kwargs,
+    ) as vllm_model:  # type: ignore
         vllm_outputs = vllm_model.generate_encoder_decoder_greedy_logprobs(
-            vllm_prompts, max_tokens, num_logprobs)
+            vllm_prompts, max_tokens, num_logprobs
+        )
 
     hf_kwargs = {
         "top_k": None,
@@ -69,21 +68,20 @@ def run_test(
         "length_penalty": 1.0,
         "early_stopping": False,
         "no_repeat_ngram_size": None,
-        "min_length": 0
+        "min_length": 0,
     }
 
-    with hf_runner(model, dtype=dtype,
-                   auto_cls=AutoModelForSeq2SeqLM) as hf_model:
-        hf_kwargs["decoder_start_token_id"] = (
-            hf_model.tokenizer.lang_code_to_id["ro_RO"])
+    with hf_runner(model, dtype=dtype, auto_cls=AutoModelForSeq2SeqLM) as hf_model:
+        hf_kwargs["decoder_start_token_id"] = hf_model.tokenizer.lang_code_to_id[
+            "ro_RO"
+        ]
 
-        hf_outputs = (
-            hf_model.generate_encoder_decoder_greedy_logprobs_limit(
-                prompts,  # HF runner still uses the original prompts
-                max_tokens,
-                num_logprobs,
-                **hf_kwargs,
-            ))
+        hf_outputs = hf_model.generate_encoder_decoder_greedy_logprobs_limit(
+            prompts,  # HF runner still uses the original prompts
+            max_tokens,
+            num_logprobs,
+            **hf_kwargs,
+        )
 
     hf_skip_tokens = 0
 
@@ -107,8 +105,16 @@ def run_test(
 @pytest.mark.parametrize("max_tokens", [64])
 @pytest.mark.parametrize("num_logprobs", [5])
 @pytest.mark.parametrize("decoder_prompt_type", list(DecoderPromptType))
-def test_models(hf_runner, vllm_runner, example_encoder_decoder_prompts, model,
-                dtype, max_tokens, num_logprobs, decoder_prompt_type) -> None:
+def test_models(
+    hf_runner,
+    vllm_runner,
+    example_encoder_decoder_prompts,
+    model,
+    dtype,
+    max_tokens,
+    num_logprobs,
+    decoder_prompt_type,
+) -> None:
 
     run_test(
         hf_runner,

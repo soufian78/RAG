@@ -63,7 +63,7 @@ def bench_run(
 
     print(f"Testing: {sub_label}")
 
-    (m, k, n) = mkn
+    m, k, n = mkn
 
     dtype = torch.half
     device = "cuda"

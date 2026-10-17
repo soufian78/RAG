@@ -22,9 +22,9 @@ from vllm.utils import FlexibleArgumentParser
 
 mp.set_start_method("spawn", force=True)
 
-assert current_platform.is_cuda(), (
-    "Only support tune w8a8 block fp8 kernel on CUDA device."
-)
+assert (
+    current_platform.is_cuda()
+), "Only support tune w8a8 block fp8 kernel on CUDA device."
 
 DTYPE_MAP = {
     "float32": torch.float32,

@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 # Copyright © 2025, Oracle and/or its affiliates.
-"""Tests RTN quantization startup and generation, 
+"""Tests RTN quantization startup and generation,
 doesn't test correctness
 """
+
 import pytest
 
 from tests.quantization.utils import is_quant_method_supported
@@ -14,8 +15,10 @@ MODELS = [
 ]
 
 
-@pytest.mark.skipif(not is_quant_method_supported("rtn"),
-                    reason="RTN is not supported on this GPU type.")
+@pytest.mark.skipif(
+    not is_quant_method_supported("rtn"),
+    reason="RTN is not supported on this GPU type.",
+)
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["bfloat16"])
 @pytest.mark.parametrize("max_tokens", [10])

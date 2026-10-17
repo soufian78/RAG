@@ -45,10 +45,9 @@ def test_flex_attention_vs_default_backend(vllm_runner, monkeypatch):
         "The capital of France is",
     ]
 
-    sampling_params = SamplingParams(temperature=0.0,
-                                     top_p=1.0,
-                                     seed=seed,
-                                     max_tokens=max_tokens)
+    sampling_params = SamplingParams(
+        temperature=0.0, top_p=1.0, seed=seed, max_tokens=max_tokens
+    )
 
     # Run with flex attention
     with monkeypatch.context() as m:
@@ -56,27 +55,30 @@ def test_flex_attention_vs_default_backend(vllm_runner, monkeypatch):
         m.setenv("VLLM_ATTENTION_BACKEND", "FLEX_ATTENTION")
 
         set_seed(seed)
-        with vllm_runner(model_name,
-                         runner="generate",
-                         tensor_parallel_size=1,
-                         num_gpu_blocks_override=128,
-                         enforce_eager=True) as llm_flex:
+        with vllm_runner(
+            model_name,
+            runner="generate",
+            tensor_parallel_size=1,
+            num_gpu_blocks_override=128,
+            enforce_eager=True,
+        ) as llm_flex:
             output_flex = llm_flex.generate(prompts, sampling_params)
 
     # Run with default backend
     with monkeypatch.context() as m:
         m.setenv("VLLM_USE_V1", "1")
         set_seed(seed)
-        with vllm_runner(model_name,
-                         runner="generate",
-                         tensor_parallel_size=1,
-                         num_gpu_blocks_override=128,
-                         enforce_eager=True) as llm_default:
+        with vllm_runner(
+            model_name,
+            runner="generate",
+            tensor_parallel_size=1,
+            num_gpu_blocks_override=128,
+            enforce_eager=True,
+        ) as llm_default:
             output_default = llm_default.generate(prompts, sampling_params)
 
     # Compare outputs from both backends
-    for i, (flex_result,
-            default_result) in enumerate(zip(output_flex, output_default)):
+    for i, (flex_result, default_result) in enumerate(zip(output_flex, output_default)):
         prompt = prompts[i]
         flex_text = flex_result[1][0]
         default_text = default_result[1][0]
@@ -84,7 +86,8 @@ def test_flex_attention_vs_default_backend(vllm_runner, monkeypatch):
         assert flex_text == default_text, (
             f"FlexAttention output doesn't match default for: {prompt!r}\n"
             f"FlexAttention: {flex_text!r}\n"
-            f"Default: {default_text!r}")
+            f"Default: {default_text!r}"
+        )
 
 
 @pytest.mark.skipif(
@@ -108,23 +111,27 @@ def test_encoder_flex_attention_vs_default_backend(vllm_runner, monkeypatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_USE_V1", "1")
         m.setenv("VLLM_ATTENTION_BACKEND", "FLEX_ATTENTION")
-        with vllm_runner(model_name,
-                         runner="pooling",
-                         dtype=torch.bfloat16,
-                         tensor_parallel_size=1,
-                         max_model_len=100,
-                         enforce_eager=True) as llm_flex:
+        with vllm_runner(
+            model_name,
+            runner="pooling",
+            dtype=torch.bfloat16,
+            tensor_parallel_size=1,
+            max_model_len=100,
+            enforce_eager=True,
+        ) as llm_flex:
             flex_outputs = llm_flex.embed(prompts)
 
     # Run with default backend
     with monkeypatch.context() as m:
         m.setenv("VLLM_USE_V1", "1")
-        with vllm_runner(model_name,
-                         runner="pooling",
-                         dtype=torch.bfloat16,
-                         tensor_parallel_size=1,
-                         max_model_len=100,
-                         enforce_eager=True) as llm_default:
+        with vllm_runner(
+            model_name,
+            runner="pooling",
+            dtype=torch.bfloat16,
+            tensor_parallel_size=1,
+            max_model_len=100,
+            enforce_eager=True,
+        ) as llm_default:
             default_outputs = llm_default.embed(prompts)
 
     check_embeddings_close(

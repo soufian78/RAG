@@ -6,7 +6,6 @@ from vllm.assets.image import ImageAsset
 from vllm.config import ModelConfig
 from vllm.multimodal import MULTIMODAL_REGISTRY
 
-
 # yapf: disable
 @pytest.mark.parametrize("model_id",
                          ["llava-hf/llava-onevision-qwen2-0.5b-ov-hf"])

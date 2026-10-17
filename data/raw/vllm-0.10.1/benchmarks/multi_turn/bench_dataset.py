@@ -214,9 +214,9 @@ def parse_input_json_file(conf: dict) -> GenConvArgs:
     text_files = conf["text_files"]
 
     assert isinstance(text_files, list), "Field 'text_files' should be a list"
-    assert len(text_files) > 0, (
-        "Field 'text_files' should be a list with at least one file"
-    )
+    assert (
+        len(text_files) > 0
+    ), "Field 'text_files' should be a list with at least one file"
 
     # Parse the parameters for the prompt input/output workload
     input_num_turns = get_random_distribution(conf, "prompt_input", "num_turns")
@@ -230,9 +230,9 @@ def parse_input_json_file(conf: dict) -> GenConvArgs:
     output_num_tokens = get_random_distribution(conf, "prompt_output", "num_tokens")
 
     print_stats: bool = conf.get("print_stats", False)
-    assert isinstance(print_stats, bool), (
-        "Field 'print_stats' should be either 'true' or 'false'"
-    )
+    assert isinstance(
+        print_stats, bool
+    ), "Field 'print_stats' should be either 'true' or 'false'"
 
     args = GenConvArgs(
         num_conversations=conf["num_conversations"],
@@ -453,14 +453,14 @@ def conversations_list_to_dict(input_list: ShareGptConversations) -> Conversatio
         conv_id: str = item["id"]
         assert isinstance(conv_id, str)
 
-        assert conv_id not in conversations, (
-            f"Conversation ID {conv_id} found more than once in the input"
-        )
+        assert (
+            conv_id not in conversations
+        ), f"Conversation ID {conv_id} found more than once in the input"
 
         messages: MessagesList = item["messages"]
-        assert isinstance(messages, list), (
-            f"Conversation messages should be a list (ID: {conv_id})"
-        )
+        assert isinstance(
+            messages, list
+        ), f"Conversation messages should be a list (ID: {conv_id})"
         assert len(messages) > 0, f"Conversation with no messages (ID: {conv_id})"
 
         conversations[conv_id] = messages

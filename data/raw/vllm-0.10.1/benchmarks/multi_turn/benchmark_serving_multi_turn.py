@@ -376,9 +376,9 @@ async def send_turn(
     # Verify that the message has only two keys, "role" and "content"
     assert len(messages[index].keys()) == 2
     assert "role" in messages[index] and "content" in messages[index]
-    assert messages[index]["role"] == "user", (
-        f"Failed on conversation ID {conv_id}, message role should be user"
-    )
+    assert (
+        messages[index]["role"] == "user"
+    ), f"Failed on conversation ID {conv_id}, message role should be user"
 
     if verbose:
         print(
@@ -491,9 +491,9 @@ async def send_turn(
     # Save the LLM's answer (will be used as part of the context for the next user turn)
     answer_index = messages_to_use
     if len(conversation_messages) > answer_index:
-        assert conversation_messages[answer_index]["role"] == "assistant", (
-            f"Failed on conversation ID {conv_id}, message role should be assistant"
-        )
+        assert (
+            conversation_messages[answer_index]["role"] == "assistant"
+        ), f"Failed on conversation ID {conv_id}, message role should be assistant"
 
         orig_content = conversation_messages[answer_index]["content"]
         if verify_output:

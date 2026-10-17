@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Tests for phi3v's multimodal preprocessing kwargs."""
+
 import pytest
 
 from vllm.multimodal import MULTIMODAL_REGISTRY

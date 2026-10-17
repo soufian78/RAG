@@ -291,9 +291,9 @@ async def get_request(
     input_requests = iter(input_requests)
 
     # Calculate scale parameter theta to maintain the desired request_rate.
-    assert burstiness > 0, (
-        f"A positive burstiness factor is expected, but given {burstiness}."
-    )
+    assert (
+        burstiness > 0
+    ), f"A positive burstiness factor is expected, but given {burstiness}."
     theta = 1.0 / (request_rate * burstiness)
 
     for i, request in enumerate(input_requests):
@@ -836,9 +836,9 @@ def main(args: argparse.Namespace):
             "model_id": model_id,
             "tokenizer_id": tokenizer_id,
             "num_prompts": args.num_prompts,
-            "request_rate": args.request_rate
-            if args.request_rate < float("inf")
-            else "inf",
+            "request_rate": (
+                args.request_rate if args.request_rate < float("inf") else "inf"
+            ),
             "burstiness": args.burstiness,
             "max_concurrency": args.max_concurrency,
             "correct_rate(%)": score,

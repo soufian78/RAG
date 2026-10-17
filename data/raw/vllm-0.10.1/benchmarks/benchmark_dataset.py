@@ -306,9 +306,9 @@ class RandomDataset(BenchmarkDataset):
         **kwargs,
     ) -> list[SampleRequest]:
         # Enforce range_ratio < 1
-        assert range_ratio < 1.0, (
-            "random_range_ratio must be < 1.0 to ensure a valid sampling range"
-        )
+        assert (
+            range_ratio < 1.0
+        ), "random_range_ratio must be < 1.0 to ensure a valid sampling range"
 
         vocab_size = tokenizer.vocab_size
         num_special_tokens = tokenizer.num_special_tokens_to_add()

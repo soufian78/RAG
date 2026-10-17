@@ -980,9 +980,7 @@ def load_smolvlm(question: str, image_urls: list[str]) -> ModelRequestData:
     placeholders = "\n".join(
         f"Image-{i}: <image>\n" for i, _ in enumerate(image_urls, start=1)
     )
-    prompt = (
-        f"<|im_start|>User:{placeholders}\n{question}<end_of_utterance>\nAssistant:"  # noqa: E501
-    )
+    prompt = f"<|im_start|>User:{placeholders}\n{question}<end_of_utterance>\nAssistant:"  # noqa: E501
     return ModelRequestData(
         engine_args=engine_args,
         prompt=prompt,

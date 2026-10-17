@@ -4,6 +4,7 @@
 
 Run `pytest tests/kernels/moe/test_moe_pallas.py`.
 """
+
 import pytest
 import torch
 
@@ -42,6 +43,7 @@ def test_pallas_moe(
     dtype: torch.dtype,
 ):
     import torch_xla.core.xla_model as xm
+
     with torch.device(xm.xla_device()):
         a = torch.randn((m, k), dtype=dtype) / 10
         w1 = torch.randn((e, 2 * n, k), dtype=dtype) / 10

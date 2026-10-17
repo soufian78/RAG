@@ -3,12 +3,8 @@ import re
 from .models import Chunk
 
 
-def chunk_python(
-    text: str,
-    file_path: str,
-    max_chunk: int
-) -> list[Chunk]:
-
+def chunk_python(text: str, file_path: str, max_chunk: int) -> list[Chunk]:
+    """Split Python code into chunks."""
     chunks: list[Chunk] = []
 
     try:
@@ -20,9 +16,7 @@ def chunk_python(
     offset_lines: list[int] = [0]
 
     for line in lines:
-        offset_lines.append(
-            offset_lines[-1] + len(line)
-        )
+        offset_lines.append(offset_lines[-1] + len(line))
 
     for node in tree.body:
 
@@ -53,18 +47,14 @@ def chunk_python(
 
         else:
             for i in range(0, len(chunk_text), max_chunk):
-
-                part = chunk_text[i:i + max_chunk]
-
+                end = i + max_chunk
+                part = chunk_text[i:end]
                 part_start = start + i
                 part_end = part_start + len(part)
-
                 chunks.append(
                     Chunk(
                         file_path=file_path,
-
                         start=part_start,
-
                         end=part_end,
                         content=part,
                     )
@@ -73,22 +63,14 @@ def chunk_python(
     return chunks
 
 
-def chunk_markdown(
-    text: str,
-    file_path: str,
-    max_chunk: int
-) -> list[Chunk]:
-
+def chunk_markdown(text: str, file_path: str, max_chunk: int) -> list[Chunk]:
+    """Split Markdown text into chunks."""
     if max_chunk <= 0:
         return []
 
     chunks: list[Chunk] = []
 
-    sections = re.split(
-        r"(?=^#{1,6}\s)",
-        text,
-        flags=re.MULTILINE
-    )
+    sections = re.split(r"(?=^#{1,6}\s)", text, flags=re.MULTILINE)
 
     current_pos = 0
 
@@ -115,7 +97,7 @@ def chunk_markdown(
                     file_path=file_path,
                     start=start,
                     end=chunk_end,
-                    content=text[start:chunk_end]
+                    content=text[start:chunk_end],
                 )
             )
 

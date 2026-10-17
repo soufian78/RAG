@@ -25,12 +25,14 @@ def glm4_moe_tool_parser(glm4_moe_tokenizer):
     return Glm4MoeModelToolParser(glm4_moe_tokenizer)
 
 
-def assert_tool_calls(actual_tool_calls: list[ToolCall],
-                      expected_tool_calls: list[ToolCall]):
+def assert_tool_calls(
+    actual_tool_calls: list[ToolCall], expected_tool_calls: list[ToolCall]
+):
     assert len(actual_tool_calls) == len(expected_tool_calls)
 
-    for actual_tool_call, expected_tool_call in zip(actual_tool_calls,
-                                                    expected_tool_calls):
+    for actual_tool_call, expected_tool_call in zip(
+        actual_tool_calls, expected_tool_calls
+    ):
         assert isinstance(actual_tool_call.id, str)
         assert len(actual_tool_call.id) > 0
 
@@ -45,7 +47,8 @@ def assert_tool_calls(actual_tool_calls: list[ToolCall],
 def test_extract_tool_calls_no_tools(glm4_moe_tool_parser):
     model_output = "This is a test"
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
     assert not extracted_tool_calls.tools_called
     assert extracted_tool_calls.tool_calls == []
     assert extracted_tool_calls.content == model_output
@@ -71,14 +74,18 @@ def test_extract_tool_calls_no_tools(glm4_moe_tool_parser):
     <arg_value>fahrenheit</arg_value>
     </tool_call>""",
             [
-                ToolCall(function=FunctionCall(
-                    name="get_current_weather",
-                    arguments=json.dumps({
-                        "city": "Dallas",
-                        "state": "TX",
-                        "unit": "fahrenheit",
-                    }),
-                ))
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_current_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "Dallas",
+                                "state": "TX",
+                                "unit": "fahrenheit",
+                            }
+                        ),
+                    )
+                )
             ],
             None,
         ),
@@ -100,22 +107,30 @@ def test_extract_tool_calls_no_tools(glm4_moe_tool_parser):
     <arg_value>fahrenheit</arg_value>
     </tool_call>""",
             [
-                ToolCall(function=FunctionCall(
-                    name="get_current_weather",
-                    arguments=json.dumps({
-                        "city": "Dallas",
-                        "state": "TX",
-                        "unit": "fahrenheit",
-                    }),
-                )),
-                ToolCall(function=FunctionCall(
-                    name="get_current_weather",
-                    arguments=json.dumps({
-                        "city": "Orlando",
-                        "state": "FL",
-                        "unit": "fahrenheit",
-                    }),
-                )),
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_current_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "Dallas",
+                                "state": "TX",
+                                "unit": "fahrenheit",
+                            }
+                        ),
+                    )
+                ),
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_current_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "Orlando",
+                                "state": "FL",
+                                "unit": "fahrenheit",
+                            }
+                        ),
+                    )
+                ),
             ],
             None,
         ),
@@ -129,14 +144,18 @@ def test_extract_tool_calls_no_tools(glm4_moe_tool_parser):
     <arg_value>celsius</arg_value>
     </tool_call>""",
             [
-                ToolCall(function=FunctionCall(
-                    name="get_current_weather",
-                    arguments=json.dumps({
-                        "city": "Seattle",
-                        "state": "WA",
-                        "unit": "celsius",
-                    }),
-                ))
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_current_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "Seattle",
+                                "state": "WA",
+                                "unit": "celsius",
+                            }
+                        ),
+                    )
+                )
             ],
             "I'll help you check the weather.",
         ),
@@ -150,37 +169,51 @@ def test_extract_tool_calls_no_tools(glm4_moe_tool_parser):
     <arg_value>celsius</arg_value>
     </tool_call>""",
             [
-                ToolCall(function=FunctionCall(
-                    name="get_current_weather",
-                    arguments=json.dumps({
-                        "city": "New York",
-                        "state": "NY",
-                        "unit": "celsius",
-                    }),
-                ))
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_current_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "New York",
+                                "state": "NY",
+                                "unit": "celsius",
+                            }
+                        ),
+                    )
+                )
             ],
             None,
         ),
-        ("""I will help you get the weather.<tool_call>get_weather
+        (
+            """I will help you get the weather.<tool_call>get_weather
     <arg_key>city</arg_key>
     <arg_value>Beijing</arg_value>
     <arg_key>date</arg_key>
     <arg_value>2025-08-01</arg_value>
-    </tool_call>""", [
-            ToolCall(function=FunctionCall(
-                name="get_weather",
-                arguments=json.dumps({
-                    "city": "Beijing",
-                    "date": "2025-08-01",
-                }),
-            ))
-        ], "I will help you get the weather."),
+    </tool_call>""",
+            [
+                ToolCall(
+                    function=FunctionCall(
+                        name="get_weather",
+                        arguments=json.dumps(
+                            {
+                                "city": "Beijing",
+                                "date": "2025-08-01",
+                            }
+                        ),
+                    )
+                )
+            ],
+            "I will help you get the weather.",
+        ),
     ],
 )
-def test_extract_tool_calls(glm4_moe_tool_parser, model_output,
-                            expected_tool_calls, expected_content):
+def test_extract_tool_calls(
+    glm4_moe_tool_parser, model_output, expected_tool_calls, expected_content
+):
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
     assert extracted_tool_calls.tools_called
     assert_tool_calls(extracted_tool_calls.tool_calls, expected_tool_calls)
 
@@ -200,7 +233,8 @@ I will help you get the weather.
 </tool_call>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     assert extracted_tool_calls.tools_called
     assert len(extracted_tool_calls.tool_calls) == 1
@@ -222,7 +256,8 @@ def test_extract_tool_calls_malformed_xml(glm4_moe_tool_parser):
 </tool_call>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     # Should handle malformed XML gracefully
     # The parser should either extract what it can or return no tool calls
@@ -237,12 +272,12 @@ def test_extract_tool_calls_empty_arguments(glm4_moe_tool_parser):
 </tool_call>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     assert extracted_tool_calls.tools_called
     assert len(extracted_tool_calls.tool_calls) == 1
-    assert extracted_tool_calls.tool_calls[
-        0].function.name == "get_current_time"
+    assert extracted_tool_calls.tool_calls[0].function.name == "get_current_time"
     # Empty arguments should result in empty JSON object
     assert extracted_tool_calls.tool_calls[0].function.arguments == "{}"
 
@@ -268,7 +303,8 @@ meaningwhile, I will also check the weather in Shanghai.
 </tool_call>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     assert extracted_tool_calls.tools_called
     assert len(extracted_tool_calls.tool_calls) == 2
@@ -319,8 +355,7 @@ def test_streaming_basic_functionality(glm4_moe_tool_parser):
 
     # The result behavior depends on the streaming state
     # This test mainly ensures no exceptions are thrown
-    assert result is None or hasattr(result, 'tool_calls') or hasattr(
-        result, 'content')
+    assert result is None or hasattr(result, "tool_calls") or hasattr(result, "content")
 
 
 def test_streaming_no_tool_calls(glm4_moe_tool_parser):
@@ -339,7 +374,7 @@ def test_streaming_no_tool_calls(glm4_moe_tool_parser):
 
     # Should return the delta text as content
     assert result is not None
-    assert hasattr(result, 'content')
+    assert hasattr(result, "content")
     assert result.content == " without any tool calls."
 
 
@@ -365,7 +400,7 @@ def test_streaming_with_content_before_tool_calls(glm4_moe_tool_parser):
 
     # Should return content when no tool call tokens are detected
     assert result is not None
-    assert hasattr(result, 'content')
+    assert hasattr(result, "content")
     assert result.content == "get the weather.<tool_call>"
 
 
@@ -381,7 +416,8 @@ def test_extract_tool_calls_special_characters(glm4_moe_tool_parser):
 </tool_call>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     assert extracted_tool_calls.tools_called
     assert len(extracted_tool_calls.tool_calls) == 1
@@ -402,7 +438,8 @@ def test_extract_tool_calls_incomplete_tool_call(glm4_moe_tool_parser):
 <arg_value>2025-08-01</arg_value>"""
 
     extracted_tool_calls = glm4_moe_tool_parser.extract_tool_calls(
-        model_output, request=None)  # type: ignore[arg-type]
+        model_output, request=None
+    )  # type: ignore[arg-type]
 
     # Incomplete tool calls should not be extracted
     assert not extracted_tool_calls.tools_called

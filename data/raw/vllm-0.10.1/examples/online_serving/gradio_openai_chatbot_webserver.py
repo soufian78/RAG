@@ -48,9 +48,11 @@ def predict(message, history, client, model_name, temp, stop_token_ids):
         stream=True,
         extra_body={
             "repetition_penalty": 1,
-            "stop_token_ids": [int(id.strip()) for id in stop_token_ids.split(",")]
-            if stop_token_ids
-            else [],
+            "stop_token_ids": (
+                [int(id.strip()) for id in stop_token_ids.split(",")]
+                if stop_token_ids
+                else []
+            ),
         },
     )
 

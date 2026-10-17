@@ -4,31 +4,36 @@ import pytest
 import torch
 
 from vllm.multimodal.cache import MultiModalCache, MultiModalCacheItemMetadata
-from vllm.multimodal.inputs import (MultiModalFieldElem, MultiModalKwargs,
-                                    MultiModalKwargsItem,
-                                    MultiModalSharedField)
+from vllm.multimodal.inputs import (
+    MultiModalFieldElem,
+    MultiModalKwargs,
+    MultiModalKwargsItem,
+    MultiModalSharedField,
+)
 
 
 def _dummy_elem(modality: str, key: str, size: int):
     return MultiModalFieldElem(
         modality=modality,
         key=key,
-        data=torch.empty((size, ), dtype=torch.int8),
+        data=torch.empty((size,), dtype=torch.int8),
         field=MultiModalSharedField(1),
     )
 
 
 def _dummy_item(modality: str, size_by_key: dict[str, int]):
-    return MultiModalKwargsItem.from_elems([
-        _dummy_elem(modality, key, size) for key, size in size_by_key.items()
-    ])
+    return MultiModalKwargsItem.from_elems(
+        [_dummy_elem(modality, key, size) for key, size in size_by_key.items()]
+    )
 
 
 def _dummy_kw(size_by_key_modality: dict[str, dict[str, int]]):
-    return MultiModalKwargs([
-        _dummy_item(modality, size_by_key)
-        for modality, size_by_key in size_by_key_modality.items()
-    ])
+    return MultiModalKwargs(
+        [
+            _dummy_item(modality, size_by_key)
+            for modality, size_by_key in size_by_key_modality.items()
+        ]
+    )
 
 
 # yapf: disable

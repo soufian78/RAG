@@ -142,9 +142,9 @@ def sample_requests_from_random(
         prompt_token_ids = prefix_token_ids + unique_part_token_ids
         prompt = tokenizer.decode(prompt_token_ids)
         prompt_len = len(prompt_token_ids)
-        assert min_len <= prompt_len <= max_len, (
-            f"prompt_len {prompt_len} out of range {min_len}:{max_len}"
-        )
+        assert (
+            min_len <= prompt_len <= max_len
+        ), f"prompt_len {prompt_len} out of range {min_len}:{max_len}"
         requests.append(Request(prompt, prompt_len, fixed_output_len))
     return requests
 

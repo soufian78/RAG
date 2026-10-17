@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Test the functionality of the Transformers backend."""
+
 from typing import Any, Optional, Union
 
 import pytest
@@ -54,13 +55,15 @@ def check_implementation(
 
 @pytest.mark.skipif(
     current_platform.is_rocm(),
-    reason="Llama-3.2-1B-Instruct, Ilama-3.2-1B produce memory access fault.")
+    reason="Llama-3.2-1B-Instruct, Ilama-3.2-1B produce memory access fault.",
+)
 @pytest.mark.parametrize(
     "model,model_impl",
     [
         ("meta-llama/Llama-3.2-1B-Instruct", "transformers"),
         ("hmellor/Ilama-3.2-1B", "auto"),  # CUSTOM CODE
-    ])  # trust_remote_code=True by default
+    ],
+)  # trust_remote_code=True by default
 def test_models(
     hf_runner: type[HfRunner],
     vllm_runner: type[VllmRunner],
@@ -68,23 +71,23 @@ def test_models(
     model: str,
     model_impl: str,
 ) -> None:
-    check_implementation(hf_runner,
-                         vllm_runner,
-                         example_prompts,
-                         model,
-                         model_impl=model_impl)
+    check_implementation(
+        hf_runner, vllm_runner, example_prompts, model, model_impl=model_impl
+    )
 
 
 def test_hybrid_attention(vllm_runner: type[VllmRunner]) -> None:
     prompts, _, _ = prep_prompts(4, (800, 801))
     kwargs_ref = {"max_model_len": 8192, "enforce_eager": True}
     kwargs_test = {"model_impl": "transformers", **kwargs_ref}
-    check_implementation(vllm_runner,
-                         vllm_runner,
-                         prompts,
-                         model="hmellor/tiny-random-Gemma2ForCausalLM",
-                         kwargs_ref=kwargs_ref,
-                         kwargs_test=kwargs_test)
+    check_implementation(
+        vllm_runner,
+        vllm_runner,
+        prompts,
+        model="hmellor/tiny-random-Gemma2ForCausalLM",
+        kwargs_ref=kwargs_ref,
+        kwargs_test=kwargs_test,
+    )
 
 
 @multi_gpu_test(num_gpus=2)
@@ -94,24 +97,30 @@ def test_distributed(
     example_prompts,
 ):
     kwargs = {"model_impl": "transformers", "tensor_parallel_size": 2}
-    check_implementation(hf_runner,
-                         vllm_runner,
-                         example_prompts,
-                         "meta-llama/Llama-3.2-1B-Instruct",
-                         kwargs_test=kwargs)
+    check_implementation(
+        hf_runner,
+        vllm_runner,
+        example_prompts,
+        "meta-llama/Llama-3.2-1B-Instruct",
+        kwargs_test=kwargs,
+    )
 
 
 @pytest.mark.skipif(
     current_platform.is_rocm(),
-    reason="bitsandbytes quantization is currently not supported in rocm.")
-@pytest.mark.parametrize("model, quantization_kwargs", [
-    (
-        "meta-llama/Llama-3.2-1B-Instruct",
-        {
-            "quantization": "bitsandbytes",
-        },
-    ),
-])
+    reason="bitsandbytes quantization is currently not supported in rocm.",
+)
+@pytest.mark.parametrize(
+    "model, quantization_kwargs",
+    [
+        (
+            "meta-llama/Llama-3.2-1B-Instruct",
+            {
+                "quantization": "bitsandbytes",
+            },
+        ),
+    ],
+)
 @pytest.mark.parametrize("max_tokens", [32])
 @pytest.mark.parametrize("num_logprobs", [5])
 def test_quantization(
@@ -123,21 +132,21 @@ def test_quantization(
     num_logprobs: int,
 ) -> None:
     with vllm_runner(
-            model, model_impl="auto", enforce_eager=True,
-            **quantization_kwargs) as vllm_model:  # type: ignore[arg-type]
+        model, model_impl="auto", enforce_eager=True, **quantization_kwargs
+    ) as vllm_model:  # type: ignore[arg-type]
         vllm_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens=max_tokens, num_logprobs=num_logprobs)
+            example_prompts, max_tokens=max_tokens, num_logprobs=num_logprobs
+        )
 
     with vllm_runner(
-            model,
-            model_impl="transformers",
-            enforce_eager=True,
-            **quantization_kwargs) as vllm_model:  # type: ignore[arg-type]
+        model, model_impl="transformers", enforce_eager=True, **quantization_kwargs
+    ) as vllm_model:  # type: ignore[arg-type]
         model_config = vllm_model.llm.llm_engine.model_config
         assert model_config.using_transformers_backend()
 
         transformers_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens=max_tokens, num_logprobs=num_logprobs)
+            example_prompts, max_tokens=max_tokens, num_logprobs=num_logprobs
+        )
 
     check_logprobs_close(
         outputs_0_lst=transformers_outputs,
@@ -153,15 +162,17 @@ def test_quantization(
         # Layers live in `layers`
         "Qwen/Qwen3-Embedding-0.6B",
         # Layers live in `model.layers`
-        "meta-llama/Llama-3.2-1B-Instruct"
+        "meta-llama/Llama-3.2-1B-Instruct",
     ],
 )
 def test_embed_loading(vllm_runner, model):
-    with vllm_runner(model,
-                     max_model_len=1024,
-                     enforce_eager=True,
-                     runner="pooling",
-                     model_impl="transformers") as model_test:
+    with vllm_runner(
+        model,
+        max_model_len=1024,
+        enforce_eager=True,
+        runner="pooling",
+        model_impl="transformers",
+    ) as model_test:
         model_config = model_test.llm.llm_engine.model_config
         assert model_config.using_transformers_backend()
 
@@ -181,23 +192,23 @@ def test_classify(
     import torch
     from transformers import AutoModelForSequenceClassification
 
-    with vllm_runner(model,
-                     max_model_len=512,
-                     dtype=dtype,
-                     model_impl="transformers") as vllm_model:
+    with vllm_runner(
+        model, max_model_len=512, dtype=dtype, model_impl="transformers"
+    ) as vllm_model:
         model_config = vllm_model.llm.llm_engine.model_config
         assert model_config.using_transformers_backend()
 
         vllm_outputs = vllm_model.classify(example_prompts)
 
-    with hf_runner(model,
-                   dtype=dtype,
-                   auto_cls=AutoModelForSequenceClassification) as hf_model:
+    with hf_runner(
+        model, dtype=dtype, auto_cls=AutoModelForSequenceClassification
+    ) as hf_model:
         hf_outputs = hf_model.classify(example_prompts)
 
     for hf_output, vllm_output in zip(hf_outputs, vllm_outputs):
         hf_output = torch.tensor(hf_output)
         vllm_output = torch.tensor(vllm_output)
 
-        assert torch.allclose(hf_output, vllm_output,
-                              1e-3 if dtype == "float" else 1e-2)
+        assert torch.allclose(
+            hf_output, vllm_output, 1e-3 if dtype == "float" else 1e-2
+        )

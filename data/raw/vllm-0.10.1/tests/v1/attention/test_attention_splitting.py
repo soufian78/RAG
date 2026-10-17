@@ -6,10 +6,12 @@ import torch
 
 from tests.v1.attention.test_attention_backends import BATCH_SPECS
 from tests.v1.attention.utils import create_common_attn_metadata
-from vllm.v1.attention.backends.utils import (UbatchSlice,
-                                              _make_metadata_with_slice,
-                                              slice_query_start_locs,
-                                              split_attn_metadata)
+from vllm.v1.attention.backends.utils import (
+    UbatchSlice,
+    _make_metadata_with_slice,
+    slice_query_start_locs,
+    split_attn_metadata,
+)
 
 
 @pytest.fixture
@@ -77,9 +79,7 @@ def small_decode_metadata():
     """Create metadata for small decode batch"""
     batch_spec = BATCH_SPECS["small_decode"]
     device = torch.device("cpu")
-    return create_common_attn_metadata(batch_spec,
-                                       block_size=16,
-                                       device=device)
+    return create_common_attn_metadata(batch_spec, block_size=16, device=device)
 
 
 @pytest.fixture
@@ -87,9 +87,7 @@ def large_decode_metadata():
     """Create metadata for small decode batch"""
     batch_spec = BATCH_SPECS["large_decode"]
     device = torch.device("cpu")
-    return create_common_attn_metadata(batch_spec,
-                                       block_size=16,
-                                       device=device)
+    return create_common_attn_metadata(batch_spec, block_size=16, device=device)
 
 
 @pytest.fixture
@@ -97,9 +95,7 @@ def mixed_small_metadata():
     """Create metadata for mixed small batch"""
     batch_spec = BATCH_SPECS["mixed_small"]
     device = torch.device("cpu")
-    return create_common_attn_metadata(batch_spec,
-                                       block_size=16,
-                                       device=device)
+    return create_common_attn_metadata(batch_spec, block_size=16, device=device)
 
 
 # Tests for _make_metadata_with_slice
@@ -120,8 +116,7 @@ def test_make_metadata_with_slice_decode_batch(small_decode_metadata):
 
 def test_make_metadata_with_slice_mixed_batch(mixed_small_metadata):
     """Test slicing mixed batch metadata"""
-    ubatch_slice = UbatchSlice(slice(1, 3),
-                               slice(1, 7))  # Requests 1-3, tokens 1-7
+    ubatch_slice = UbatchSlice(slice(1, 3), slice(1, 7))  # Requests 1-3, tokens 1-7
 
     result = _make_metadata_with_slice(ubatch_slice, mixed_small_metadata)
 
@@ -138,8 +133,7 @@ def test_split_attn_metadata_decode_batch(large_decode_metadata):
     mid_point = num_tokens // 2
     ubatch_slices = [
         UbatchSlice(slice(0, mid_point), slice(0, mid_point)),
-        UbatchSlice(slice(mid_point, num_tokens), slice(mid_point,
-                                                        num_tokens)),
+        UbatchSlice(slice(mid_point, num_tokens), slice(mid_point, num_tokens)),
     ]
 
     results = split_attn_metadata(ubatch_slices, large_decode_metadata)

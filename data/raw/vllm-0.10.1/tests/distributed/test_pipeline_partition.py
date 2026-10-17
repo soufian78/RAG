@@ -57,7 +57,8 @@ def test_custom_layer_partition(monkeypatch: pytest.MonkeyPatch):
         (5, 3, 0, (0, 2)),
         (5, 3, 1, (2, 4)),
         (5, 3, 2, (4, 5)),
-    ])
+    ],
+)
 def test_uneven_auto_partition(
     num_hidden_layers: int,
     pp_size: int,

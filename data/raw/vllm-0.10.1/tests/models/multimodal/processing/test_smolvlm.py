@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Tests for smolvlm's multimodal preprocessing kwargs."""
+
 import pytest
 from transformers import SmolVLMConfig
 
@@ -42,9 +43,14 @@ def test_processor_override(
     hf_processor_mm_kwargs = {} if kwargs_on_init else mm_processor_kwargs
 
     # Build the image str / prompt based on the number of images we pass
-    placeholders = "<image>" if num_imgs == 1 else "\n".join(
-        f"Image-{i}: <image>\n" for i in range(1, num_imgs + 1))
-    prompt = f"<|im_start|>User:{placeholders}\n<end_of_utterance>\nAssistant:"  # noqa: E501
+    placeholders = (
+        "<image>"
+        if num_imgs == 1
+        else "\n".join(f"Image-{i}: <image>\n" for i in range(1, num_imgs + 1))
+    )
+    prompt = (
+        f"<|im_start|>User:{placeholders}\n<end_of_utterance>\nAssistant:"  # noqa: E501
+    )
 
     # Build mm_data
     image_size = ctx.get_hf_config(SmolVLMConfig).vision_config.image_size
@@ -57,8 +63,7 @@ def test_processor_override(
     # Ensure the placeholders format are correct
     hf_processor = processor.info.get_hf_processor(**hf_processor_mm_kwargs)
     hf_processed_inputs = hf_processor(text=prompt, images=mm_data["image"])
-    assert processed_inputs["prompt_token_ids"] == hf_processed_inputs[
-        "input_ids"][0]
+    assert processed_inputs["prompt_token_ids"] == hf_processed_inputs["input_ids"][0]
 
     # Ensure we have the right number of placeholders per num_crops size
     image_token_id = ctx.get_hf_config().image_token_id

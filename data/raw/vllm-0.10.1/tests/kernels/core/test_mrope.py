@@ -11,32 +11,34 @@ from vllm.platforms import current_platform
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def generate_test_data(num_tokens: int, num_q_heads: int, num_kv_heads: int,
-                       head_size: int, max_position_embeddings: int,
-                       dtype: torch.dtype, device: torch.device):
+def generate_test_data(
+    num_tokens: int,
+    num_q_heads: int,
+    num_kv_heads: int,
+    head_size: int,
+    max_position_embeddings: int,
+    dtype: torch.dtype,
+    device: torch.device,
+):
     """Generate test data for given configuration."""
     # Create 2D positions (3, num_tokens) for multimodal case
-    positions = torch.randint(0,
-                              max_position_embeddings // 4, (3, num_tokens),
-                              device=device)
+    positions = torch.randint(
+        0, max_position_embeddings // 4, (3, num_tokens), device=device
+    )
 
     # Create query and key tensors
-    query = torch.randn(num_tokens,
-                        num_q_heads * head_size,
-                        dtype=dtype,
-                        device=device)
-    key = torch.randn(num_tokens,
-                      num_kv_heads * head_size,
-                      dtype=dtype,
-                      device=device)
+    query = torch.randn(num_tokens, num_q_heads * head_size, dtype=dtype, device=device)
+    key = torch.randn(num_tokens, num_kv_heads * head_size, dtype=dtype, device=device)
 
     return positions, query, key
 
 
 def unroll_model_tp_dict(model_tp_dict):
-    return [(model_name, tp_size)
-            for model_name, tp_sizes in model_tp_dict.items()
-            for tp_size in tp_sizes]
+    return [
+        (model_name, tp_size)
+        for model_name, tp_sizes in model_tp_dict.items()
+        for tp_size in tp_sizes
+    ]
 
 
 model_tp_dict = {
@@ -54,10 +56,10 @@ dtype_atol_rtol_list = [
 num_tokens_list = [11, 8192]
 
 
-@pytest.mark.skipif(not current_platform.is_cuda_alike(),
-                    reason="Skipping CUDA/ROCm only tests.")
-@pytest.mark.parametrize("model_name, tp_size",
-                         unroll_model_tp_dict(model_tp_dict))
+@pytest.mark.skipif(
+    not current_platform.is_cuda_alike(), reason="Skipping CUDA/ROCm only tests."
+)
+@pytest.mark.parametrize("model_name, tp_size", unroll_model_tp_dict(model_tp_dict))
 @pytest.mark.parametrize("dtype, atol, rtol", dtype_atol_rtol_list)
 @pytest.mark.parametrize("num_tokens", num_tokens_list)
 def test_mrope(model_name, tp_size, dtype, atol, rtol, num_tokens):
@@ -89,9 +91,9 @@ def test_mrope(model_name, tp_size, dtype, atol, rtol, num_tokens):
 
     # create q k v input tensors
     # create rotary pos emb input tensors
-    positions, query, key = generate_test_data(num_tokens, num_heads,
-                                               num_kv_heads, head_dim,
-                                               max_position, dtype, device)
+    positions, query, key = generate_test_data(
+        num_tokens, num_heads, num_kv_heads, head_dim, max_position, dtype, device
+    )
 
     query_native, key_native = mrope_helper_class.forward_native(
         positions,
@@ -109,18 +111,20 @@ def test_mrope(model_name, tp_size, dtype, atol, rtol, num_tokens):
     torch.testing.assert_close(key_native, key_cuda, atol=atol, rtol=rtol)
 
 
-@pytest.mark.skipif(not current_platform.is_cuda_alike(),
-                    reason="Skipping CUDA/ROCm only tests.")
+@pytest.mark.skipif(
+    not current_platform.is_cuda_alike(), reason="Skipping CUDA/ROCm only tests."
+)
 @pytest.mark.parametrize(
     "model_name, tp_size",
-    unroll_model_tp_dict({
-        "Qwen/Qwen2-VL-7B-Instruct": [1, 2],
-        "zai-org/GLM-4.1V-9B-Thinking": [1, 2]
-    }))
+    unroll_model_tp_dict(
+        {"Qwen/Qwen2-VL-7B-Instruct": [1, 2], "zai-org/GLM-4.1V-9B-Thinking": [1, 2]}
+    ),
+)
 @pytest.mark.parametrize("dtype, atol, rtol", dtype_atol_rtol_list)
 @pytest.mark.parametrize("num_tokens", [4])
-def test_mrope_torch_compile_tracing(model_name, tp_size, dtype, atol, rtol,
-                                     num_tokens):
+def test_mrope_torch_compile_tracing(
+    model_name, tp_size, dtype, atol, rtol, num_tokens
+):
     config = AutoConfig.from_pretrained(model_name)
 
     # get the model config
@@ -146,16 +150,16 @@ def test_mrope_torch_compile_tracing(model_name, tp_size, dtype, atol, rtol,
     ).to(device=device)
 
     # Generate test data
-    positions, query, key = generate_test_data(num_tokens, num_heads,
-                                               num_kv_heads, head_dim,
-                                               max_position, dtype, device)
+    positions, query, key = generate_test_data(
+        num_tokens, num_heads, num_kv_heads, head_dim, max_position, dtype, device
+    )
 
     # Create a wrapper that makes the in-place function appear functional
     def functional_forward_cuda(pos, q, k):
         """Wrapper that converts in-place operation to functional style
 
         CUDA Graph does not support in-place operations.
-        This wrapper creates working copies of the 
+        This wrapper creates working copies of the
         input tensors and modifies them.
         """
         q_work = q.clone()  # Create working copies
@@ -172,11 +176,13 @@ def test_mrope_torch_compile_tracing(model_name, tp_size, dtype, atol, rtol,
     )
 
     try:
-        compiled_forward_cuda = torch.compile(functional_forward_cuda,
-                                              fullgraph=True,
-                                              backend="inductor",
-                                              mode="reduce-overhead",
-                                              dynamic=False)
+        compiled_forward_cuda = torch.compile(
+            functional_forward_cuda,
+            fullgraph=True,
+            backend="inductor",
+            mode="reduce-overhead",
+            dynamic=False,
+        )
 
         # Run compiled version
         query_compiled_cuda, key_compiled_cuda = compiled_forward_cuda(
@@ -191,25 +197,16 @@ def test_mrope_torch_compile_tracing(model_name, tp_size, dtype, atol, rtol,
         mrope_helper_class.forward_cuda(positions, query_cuda, key_cuda)
 
         # Verify results
-        torch.testing.assert_close(query_compiled_cuda,
-                                   query_cuda,
-                                   atol=atol,
-                                   rtol=rtol)
-        torch.testing.assert_close(key_compiled_cuda,
-                                   key_cuda,
-                                   atol=atol,
-                                   rtol=rtol)
-        torch.testing.assert_close(query_compiled_cuda,
-                                   query_native,
-                                   atol=atol,
-                                   rtol=rtol)
-        torch.testing.assert_close(key_compiled_cuda,
-                                   key_native,
-                                   atol=atol,
-                                   rtol=rtol)
+        torch.testing.assert_close(
+            query_compiled_cuda, query_cuda, atol=atol, rtol=rtol
+        )
+        torch.testing.assert_close(key_compiled_cuda, key_cuda, atol=atol, rtol=rtol)
+        torch.testing.assert_close(
+            query_compiled_cuda, query_native, atol=atol, rtol=rtol
+        )
+        torch.testing.assert_close(key_compiled_cuda, key_native, atol=atol, rtol=rtol)
 
         print("✓ forward_cuda successfully traced with torch.compile inductor")
 
     except Exception as e:
-        pytest.fail(
-            f"forward_cuda failed to trace with torch.compile inductor: {e}")
+        pytest.fail(f"forward_cuda failed to trace with torch.compile inductor: {e}")

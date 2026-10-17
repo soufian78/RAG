@@ -3,6 +3,7 @@
 """
 Script to test multi loras service with tp >= 2
 """
+
 from tests.utils import multi_gpu_test
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
@@ -27,14 +28,8 @@ LORA_TEST_EXPECTED = [
 
 def format_chatml_messages(prompt: str):
     return [
-        {
-            "role": "system",
-            "content": "You are a helpful assistant."
-        },
-        {
-            "role": "user",
-            "content": prompt
-        },
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt},
     ]
 
 
@@ -112,15 +107,17 @@ def test_multi_loras_with_tp_sync():
 
     def reload_lora(name: str):
         """
-        reload a lora to simulate the case: 
-        setting `VLLM_ALLOW_RUNTIME_LORA_UPDATING=true` 
+        reload a lora to simulate the case:
+        setting `VLLM_ALLOW_RUNTIME_LORA_UPDATING=true`
         for dynamic lora loading and unloading
         """
         remove_lora_response = llm.llm_engine.remove_lora(
-            lora_id=LORA_NAME_ID_MAP[name])
+            lora_id=LORA_NAME_ID_MAP[name]
+        )
 
         add_lora_response = llm.llm_engine.add_lora(
-            make_add_lora_request(name, LORA_NAME_PATH_MAP[name]))
+            make_add_lora_request(name, LORA_NAME_PATH_MAP[name])
+        )
 
         print(f"{remove_lora_response=}, {add_lora_response=}")
 

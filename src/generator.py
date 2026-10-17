@@ -1,27 +1,25 @@
-from .retriever import load_index, search
 from .models import Chunk, RagDataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .retriever import load_index, search, chunk_to_source
 from functools import lru_cache
 import json
 from pathlib import Path
-
-
+import torch
+import time
 
 
 def build_context(chunks: list[Chunk]) -> str:
+    """Build context from retrieved chunks."""
     context_parts = []
 
     for chunk in chunks:
-        context_parts.append(
-            f"File: {chunk.file_path}\n"
-            f"{chunk.content}"
-        )
+        context_parts.append(f"File: {chunk.file_path}\n" f"{chunk.content}")
 
     return "\n\n".join(context_parts)
 
 
 def build_prompt(question: str, context: str) -> str:
+    """Create the prompt for answering a question."""
     return f"""You are a question-answering assistant.
 
         Rules:
@@ -39,8 +37,9 @@ def build_prompt(question: str, context: str) -> str:
         {question}
         """
 
-def prepare_prompt(question: str, k: int = 3) -> str:
 
+def prepare_prompt(question: str, k: int = 3) -> str:
+    """Retrieve relevant chunks and prepare the prompt."""
 
     chunks, bm25 = load_index()
 
@@ -51,53 +50,62 @@ def prepare_prompt(question: str, k: int = 3) -> str:
         k=k,
     )
 
- 
     context = build_context(found_chunks)
 
- 
     prompt = build_prompt(question, context)
 
     return prompt
 
 
 def generate_answer(prompt: str) -> str:
+    """Generate an answer using the language model."""
+    torch.set_num_threads(8)
     tokenizer, model = load_model()
+
     messages = [
         {
             "role": "user",
-            "content": prompt + "\nGive one short answer. Do not repeat."
+            "content": prompt + "\nAnswer briefly in one sentence.",
         }
     ]
-
     text = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
         add_generation_prompt=True,
-        enable_thinking=False
+        enable_thinking=False,
     )
 
-    inputs = tokenizer(text, return_tensors="pt")
-# with torch.no_grad
-# torch.set_num_threads()
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=40,
-        do_sample=False,
-        repetition_penalty=1.15,
-        pad_token_id=tokenizer.eos_token_id
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=2048,
     )
 
-    new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+    start = time.perf_counter()
 
-    answer = tokenizer.decode(
-        new_tokens,
-        skip_special_tokens=True
-    )
+    with torch.inference_mode():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=20,
+            do_sample=False,
+            use_cache=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+
+    elapsed = time.perf_counter() - start
+
+    prompt_len = inputs["input_ids"].shape[1]
+    new_tokens = outputs[0][prompt_len:]
+    answer = tokenizer.decode(new_tokens, skip_special_tokens=True)
+
+    print(f"Generation time: {elapsed:.2f} seconds")
 
     return answer.strip()
 
-def answer_question(question: str, k: int = 3) -> dict:
 
+def answer_question(question: str, k: int = 3) -> dict:
+    """Answer a question using the RAG pipeline."""
     chunks, bm25 = load_index()
 
     found_chunks = search(question, chunks, bm25, k)
@@ -107,7 +115,7 @@ def answer_question(question: str, k: int = 3) -> dict:
     prompt = build_prompt(question, context)
 
     answer = generate_answer(prompt)
-    
+
     fallback = "I don't know based on the provided context."
 
     answer = answer.strip()
@@ -118,23 +126,20 @@ def answer_question(question: str, k: int = 3) -> dict:
     elif answer not in context:
         answer = fallback
 
-    sources = [
-        chunk_to_source(chunk).model_dump()
-        for chunk in found_chunks
-    ]
+    sources = [chunk_to_source(chunk).model_dump() for chunk in found_chunks]
 
- 
     return {
         "question": question,
         "answer": answer,
-        "retrieved_sources": sources
+        "retrieved_sources": sources,
     }
+
 
 def test_generation():
     questions = [
         "What does the hello function do?",
         "What is GPU memory used for?",
-        "Who invented Python?"
+        "Who invented Python?",
     ]
 
     for question in questions:
@@ -144,6 +149,7 @@ def test_generation():
         print("Answer:", result["answer"])
         print("Sources:", result["retrieved_sources"])
         print("-" * 40)
+
 
 @lru_cache(maxsize=1)
 def load_model():
@@ -165,21 +171,18 @@ def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
     results = []
 
     for question in dataset.rag_questions:
-        result = answer_question(
-            question=question.question,
-            k=k
-        )
+        result = answer_question(question=question.question, k=k)
 
         result["question_id"] = question.question_id
         results.append(result)
 
     return results
 
+
 def save_generation_results(
-    results: list[dict],
-    dataset_path: str,
-    save_dir: str
+    results: list[dict], dataset_path: str, save_dir: str
 ) -> Path:
+    """Save generated answers to a JSON file."""
 
     output_dir = Path(save_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -187,31 +190,23 @@ def save_generation_results(
     output_path = output_dir / Path(dataset_path).name
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(
-            results,
-            f,
-            indent=2,
-            ensure_ascii=False
-        )
+        json.dump(results, f, indent=2, ensure_ascii=False)
 
     return output_path
 
-def run_generation_dataset(
-        dataset_path: str,
-        save_directory: str,
-        k: int = 3
-    ) -> Path:
 
-    results = answer_dataset(
-        dataset_path=dataset_path,
-        k=k
-    )
+def run_generation_dataset(
+    dataset_path: str,
+    save_directory: str,
+    k: int = 3,
+) -> Path:
+    """Run the complete generation pipeline for a dataset."""
+
+    results = answer_dataset(dataset_path=dataset_path, k=k)
     print("DEBUG:", results)
 
     output_path = save_generation_results(
-        results=results,
-        dataset_path=dataset_path,
-        save_dir=save_directory
+        results=results, dataset_path=dataset_path, save_dir=save_directory
     )
 
     return output_path
@@ -221,7 +216,7 @@ if __name__ == "__main__":
     output_path = run_generation_dataset(
         dataset_path="data/datasets/test.json",
         save_directory="data/output/generation_results",
-        k=3
+        k=3,
     )
 
     print("Saved to:", output_path)

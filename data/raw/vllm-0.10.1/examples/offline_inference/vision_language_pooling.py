@@ -92,9 +92,7 @@ def run_vlm2vec(query: Query) -> ModelRequestData:
         image = query["image"]
     elif query["modality"] == "text+image":
         text = query["text"]
-        prompt = (
-            f"<|image_1|> Represent the given image with the following question: {text}"  # noqa: E501
-        )
+        prompt = f"<|image_1|> Represent the given image with the following question: {text}"  # noqa: E501
         image = query["image"]
     else:
         modality = query["modality"]

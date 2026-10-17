@@ -349,9 +349,9 @@ def get_requests(args, tokenizer):
         if args.backend == "vllm-chat":
             sample_kwargs["enable_multimodal_chat"] = True
     elif args.dataset_name == "sonnet":
-        assert tokenizer.chat_template or tokenizer.default_chat_template, (
-            "Tokenizer/model must have chat template for sonnet dataset."
-        )
+        assert (
+            tokenizer.chat_template or tokenizer.default_chat_template
+        ), "Tokenizer/model must have chat template for sonnet dataset."
         dataset_cls = SonnetDataset
         sample_kwargs["prefix_len"] = args.prefix_len
         sample_kwargs["return_prompt_formatted"] = True
@@ -535,16 +535,16 @@ def validate_args(args):
             VisionArenaDataset.SUPPORTED_DATASET_PATHS.keys()
             | ConversationDataset.SUPPORTED_DATASET_PATHS
         ):
-            assert args.backend == "vllm-chat", (
-                f"{args.dataset_path} needs to use vllm-chat as the backend."
-            )  # noqa: E501
+            assert (
+                args.backend == "vllm-chat"
+            ), f"{args.dataset_path} needs to use vllm-chat as the backend."  # noqa: E501
         elif args.dataset_path in (
             InstructCoderDataset.SUPPORTED_DATASET_PATHS
             | AIMODataset.SUPPORTED_DATASET_PATHS
         ):
-            assert args.backend == "vllm", (
-                f"{args.dataset_path} needs to use vllm as the backend."
-            )  # noqa: E501
+            assert (
+                args.backend == "vllm"
+            ), f"{args.dataset_path} needs to use vllm as the backend."  # noqa: E501
         else:
             raise ValueError(f"{args.dataset_path} is not supported by hf dataset.")
 
@@ -596,10 +596,8 @@ def validate_args(args):
     # --data-parallel is not supported currently.
     # https://github.com/vllm-project/vllm/issues/16222
     if args.data_parallel_size > 1:
-        raise ValueError(
-            "Data parallel is not supported in offline benchmark, \
-            please use benchmark serving instead"
-        )
+        raise ValueError("Data parallel is not supported in offline benchmark, \
+            please use benchmark serving instead")
 
 
 def create_argument_parser():

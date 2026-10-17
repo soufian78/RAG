@@ -10,6 +10,7 @@ import pytest
 from vllm.config import ModelConfig
 from vllm.inputs import InputProcessingContext
 from vllm.multimodal import MULTIMODAL_REGISTRY
+
 # yapf conflicts with isort for this block
 # yapf: disable
 from vllm.multimodal.processing import (PlaceholderFeaturesInfo,
@@ -549,12 +550,11 @@ def test_find_update_text(
     mock_tokenizer = cast(AnyTokenizer, object())
 
     for (
-            update_type,
-            expected_by_mm_count,
+        update_type,
+        expected_by_mm_count,
     ) in expected_by_update_type_mm_count.items():
         mm_prompt_updates = {
-            key:
-            [update_type(key, target, repl_by_key[key]).bind(mock_tokenizer)]
+            key: [update_type(key, target, repl_by_key[key]).bind(mock_tokenizer)]
             for key, target in target_by_key.items()
         }
         mm_matches = {
@@ -566,8 +566,7 @@ def test_find_update_text(
             result = apply_text_matches(
                 prompt,
                 mm_matches,
-                {key: mm_count
-                 for key in repl_by_key},
+                {key: mm_count for key in repl_by_key},
             )
 
             # Only displayed on error
@@ -723,12 +722,11 @@ def test_find_update_tokens(
     mock_tokenizer = cast(AnyTokenizer, object())
 
     for (
-            update_type,
-            expected_by_mm_count,
+        update_type,
+        expected_by_mm_count,
     ) in expected_by_update_type_mm_count.items():
         mm_prompt_updates = {
-            key:
-            [update_type(key, target, repl_by_key[key]).bind(mock_tokenizer)]
+            key: [update_type(key, target, repl_by_key[key]).bind(mock_tokenizer)]
             for key, target in target_by_key.items()
         }
         mm_matches = {
@@ -740,8 +738,7 @@ def test_find_update_tokens(
             result = apply_token_matches(
                 prompt,
                 mm_matches,
-                {key: mm_count
-                 for key in repl_by_key},
+                {key: mm_count for key in repl_by_key},
             )
 
             # Only displayed on error
@@ -886,8 +883,7 @@ def test_find_mm_placeholders(
         mm_prompt_updates,
         prompt,
         # Effectively match all occurrences in the prompt
-        {key: 3
-         for key in repl_by_key},
+        {key: 3 for key in repl_by_key},
     )
 
     # Only displayed on error
@@ -900,8 +896,15 @@ def test_find_mm_placeholders(
 @pytest.mark.parametrize("model_id", ["llava-hf/llava-v1.6-mistral-7b-hf"])
 @pytest.mark.parametrize(
     ("limit", "num_supported", "is_valid"),
-    [(0, 0, True), (0, 1, True), (1, 0, False), (1, 1, True), (1, 2, True),
-     (2, 1, False), (2, 2, True)],
+    [
+        (0, 0, True),
+        (0, 1, True),
+        (1, 0, False),
+        (1, 1, True),
+        (1, 2, True),
+        (2, 1, False),
+        (2, 2, True),
+    ],
 )
 def test_limit_mm_per_prompt_dummy(model_id, limit, num_supported, is_valid):
     limit_mm_per_prompt = {"image": limit}
@@ -931,8 +934,15 @@ def test_limit_mm_per_prompt_dummy(model_id, limit, num_supported, is_valid):
 @pytest.mark.parametrize("model_id", ["llava-hf/llava-v1.6-mistral-7b-hf"])
 @pytest.mark.parametrize(
     ("num_images", "limit", "is_valid"),
-    [(0, 0, True), (0, 1, True), (1, 0, False), (1, 1, True), (1, 2, True),
-     (2, 1, False), (2, 2, True)],
+    [
+        (0, 0, True),
+        (0, 1, True),
+        (1, 0, False),
+        (1, 1, True),
+        (1, 2, True),
+        (2, 1, False),
+        (2, 2, True),
+    ],
 )
 def test_limit_mm_per_prompt_apply(model_id, num_images, limit, is_valid):
     limit_mm_per_prompt = {"image": limit}

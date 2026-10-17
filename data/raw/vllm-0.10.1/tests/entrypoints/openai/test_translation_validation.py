@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import io
+
 # imports for guided decoding tests
 import json
 
@@ -23,7 +24,7 @@ SERVER_ARGS = ["--enforce-eager"]
 @pytest.fixture
 def foscolo():
     # Test translation it->en
-    path = AudioAsset('azacinto_foscolo').get_local_path()
+    path = AudioAsset("azacinto_foscolo").get_local_path()
     with open(str(path), "rb") as f:
         yield f
 
@@ -46,9 +47,9 @@ async def test_non_asr_model(foscolo):
     model_name = "JackFram/llama-68m"
     with RemoteOpenAIServer(model_name, SERVER_ARGS) as remote_server:
         client = remote_server.get_async_client()
-        res = await client.audio.translations.create(model=model_name,
-                                                     file=foscolo,
-                                                     temperature=0.0)
+        res = await client.audio.translations.create(
+            model=model_name, file=foscolo, temperature=0.0
+        )
         err = res.error
         assert err["code"] == 400 and not res.text
         assert err["message"] == "The model does not support Translations API"
@@ -63,8 +64,9 @@ async def test_basic_audio(foscolo, client):
         response_format="text",
         # TODO remove once language detection is implemented
         extra_body=dict(language="it"),
-        temperature=0.0)
-    out = json.loads(translation)['text'].strip().lower()
+        temperature=0.0,
+    )
+    out = json.loads(translation)["text"].strip().lower()
     assert "greek sea" in out
 
 
@@ -78,8 +80,9 @@ async def test_audio_prompt(foscolo, client):
         prompt=prompt,
         extra_body=dict(language="it"),
         response_format="text",
-        temperature=0.0)
-    out = json.loads(transcription)['text']
+        temperature=0.0,
+    )
+    out = json.loads(transcription)["text"]
     assert "Nor will I ever touch the sacred" not in out
     assert prompt not in out
 
@@ -92,7 +95,8 @@ async def test_streaming_response(foscolo, client, server):
         file=foscolo,
         response_format="json",
         extra_body=dict(language="it"),
-        temperature=0.0)
+        temperature=0.0,
+    )
     # Stream via HTTPX since OpenAI translation client doesn't expose streaming
     url = server.url_for("v1/audio/translations")
     headers = {"Authorization": f"Bearer {server.DUMMY_API_KEY}"}
@@ -105,16 +109,14 @@ async def test_streaming_response(foscolo, client, server):
     foscolo.seek(0)
     async with httpx.AsyncClient() as http_client:
         files = {"file": foscolo}
-        async with http_client.stream("POST",
-                                      url,
-                                      headers=headers,
-                                      data=data,
-                                      files=files) as response:
+        async with http_client.stream(
+            "POST", url, headers=headers, data=data, files=files
+        ) as response:
             async for line in response.aiter_lines():
                 if not line:
                     continue
                 if line.startswith("data: "):
-                    line = line[len("data: "):]
+                    line = line[len("data: ") :]
                 if line.strip() == "[DONE]":
                     break
                 chunk = json.loads(line)
@@ -141,16 +143,14 @@ async def test_stream_options(foscolo, client, server):
     continuous = True
     async with httpx.AsyncClient() as http_client:
         files = {"file": foscolo}
-        async with http_client.stream("POST",
-                                      url,
-                                      headers=headers,
-                                      data=data,
-                                      files=files) as response:
+        async with http_client.stream(
+            "POST", url, headers=headers, data=data, files=files
+        ) as response:
             async for line in response.aiter_lines():
                 if not line:
                     continue
                 if line.startswith("data: "):
-                    line = line[len("data: "):]
+                    line = line[len("data: ") :]
                 if line.strip() == "[DONE]":
                     break
                 chunk = json.loads(line)
@@ -170,13 +170,14 @@ async def test_long_audio_request(foscolo, client):
     repeated_audio = np.tile(audio, 2)
     # Repeated audio to buffer
     buffer = io.BytesIO()
-    sf.write(buffer, repeated_audio, sr, format='WAV')
+    sf.write(buffer, repeated_audio, sr, format="WAV")
     buffer.seek(0)
     translation = await client.audio.translations.create(
         model=MODEL_NAME,
         file=buffer,
         extra_body=dict(language="it"),
         response_format="text",
-        temperature=0.0)
-    out = json.loads(translation)['text'].strip().lower()
+        temperature=0.0,
+    )
+    out = json.loads(translation)["text"].strip().lower()
     assert out.count("greek sea") == 2

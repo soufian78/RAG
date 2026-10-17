@@ -69,8 +69,9 @@ async def run_client_embeddings(
 
 
 def gritlm_instruction(instruction):
-    return ("<|user|>\n" + instruction +
-            "\n<|embed|>\n" if instruction else "<|embed|>\n")
+    return (
+        "<|user|>\n" + instruction + "\n<|embed|>\n" if instruction else "<|embed|>\n"
+    )
 
 
 def get_test_data():
@@ -79,7 +80,8 @@ def get_test_data():
     README.md in https://github.com/ContextualAI/gritlm
     """
     q_instruction = gritlm_instruction(
-        "Given a scientific paper title, retrieve the paper's abstract", )
+        "Given a scientific paper title, retrieve the paper's abstract",
+    )
     queries = [
         "Bitcoin: A Peer-to-Peer Electronic Cash System",
         "Generative Representational Instruction Tuning",
@@ -113,9 +115,9 @@ def test_gritlm_offline_embedding(vllm_runner):
     queries, q_instruction, documents, d_instruction = get_test_data()
 
     with vllm_runner(
-            MODEL_NAME,
-            runner="pooling",
-            max_model_len=MAX_MODEL_LEN,
+        MODEL_NAME,
+        runner="pooling",
+        max_model_len=MAX_MODEL_LEN,
     ) as vllm_model:
         llm = vllm_model.llm
 
@@ -160,9 +162,9 @@ def test_gritlm_offline_generate(monkeypatch: pytest.MonkeyPatch, vllm_runner):
     input = "<|user|>\nWhat is the capital of France?\n<|assistant|>\n"
 
     with vllm_runner(
-            MODEL_NAME,
-            runner="generate",
-            max_model_len=MAX_MODEL_LEN,
+        MODEL_NAME,
+        runner="generate",
+        max_model_len=MAX_MODEL_LEN,
     ) as vllm_model:
         llm = vllm_model.llm
 

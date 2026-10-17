@@ -20,28 +20,26 @@ SERVER_ARGS = [
     f"{LORA_MODEL}={LORA_MODEL}",
 ]
 
-TOOLS = [{
-    "type": "function",
-    "function": {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description":
-                    "The city and state, e.g. San Francisco, CA",
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
                 },
-                "unit": {
-                    "type": "string",
-                    "enum": ["celsius", "fahrenheit"]
-                },
+                "required": ["location"],
             },
-            "required": ["location"],
         },
-    },
-}]
+    }
+]
 
 MESSAGES = [{"role": "user", "content": "What's the weather like in Boston?"}]
 
@@ -112,7 +110,8 @@ async def test_streaming_tool_call():
                     tool_call_chunks[index]["name"] += tool_chunk.function.name
                 if tool_chunk.function.arguments:
                     tool_call_chunks[index][
-                        "arguments"] += tool_chunk.function.arguments
+                        "arguments"
+                    ] += tool_chunk.function.arguments
 
         assert len(tool_call_chunks) == 1
         reconstructed_tool_call = tool_call_chunks[0]

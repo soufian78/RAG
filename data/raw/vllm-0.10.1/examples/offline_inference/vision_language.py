@@ -282,11 +282,8 @@ def run_glm4v(questions: list[str], modality: str) -> ModelRequestData:
         limit_mm_per_prompt={modality: 1},
     )
 
-    prompts = [
-        f"<|user|>\n<|begin_of_image|><|endoftext|><|end_of_image|>\
-        {question}<|assistant|>"
-        for question in questions
-    ]
+    prompts = [f"<|user|>\n<|begin_of_image|><|endoftext|><|end_of_image|>\
+        {question}<|assistant|>" for question in questions]
 
     stop_token_ids = [151329, 151336, 151338]
 
@@ -383,8 +380,8 @@ def run_hyperclovax_seed_vision(
     for question in questions:
         if modality == "image":
             """
-            ocr: List the words in the image in raster order. 
-                Even if the word order feels unnatural for reading, 
+            ocr: List the words in the image in raster order.
+                Even if the word order feels unnatural for reading,
                 the model will handle it as long as it follows raster order.
                 e.g. "Naver, CLOVA, bigshane"
             lens_keywords: List the entity names in the image.
@@ -692,18 +689,12 @@ def run_llava_next_video(questions: list[str], modality: str) -> ModelRequestDat
 # LLaVA-OneVision
 def run_llava_onevision(questions: list[str], modality: str) -> ModelRequestData:
     if modality == "video":
-        prompts = [
-            f"<|im_start|>user <video>\n{question}<|im_end|> \
-        <|im_start|>assistant\n"
-            for question in questions
-        ]
+        prompts = [f"<|im_start|>user <video>\n{question}<|im_end|> \
+        <|im_start|>assistant\n" for question in questions]
 
     elif modality == "image":
-        prompts = [
-            f"<|im_start|>user <image>\n{question}<|im_end|> \
-        <|im_start|>assistant\n"
-            for question in questions
-        ]
+        prompts = [f"<|im_start|>user <image>\n{question}<|im_end|> \
+        <|im_start|>assistant\n" for question in questions]
 
     engine_args = EngineArgs(
         model="llava-hf/llava-onevision-qwen2-7b-ov-hf",
@@ -890,11 +881,8 @@ def run_molmo(questions: list[str], modality: str) -> ModelRequestData:
         limit_mm_per_prompt={modality: 1},
     )
 
-    prompts = [
-        f"<|im_start|>user <image>\n{question}<|im_end|> \
-        <|im_start|>assistant\n"
-        for question in questions
-    ]
+    prompts = [f"<|im_start|>user <image>\n{question}<|im_end|> \
+        <|im_start|>assistant\n" for question in questions]
 
     return ModelRequestData(
         engine_args=engine_args,

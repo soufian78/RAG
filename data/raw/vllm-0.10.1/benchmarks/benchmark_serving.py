@@ -680,9 +680,9 @@ def main(args: argparse.Namespace):
                 return_prompt_formatted=False,
             )
         else:
-            assert tokenizer.chat_template or tokenizer.default_chat_template, (
-                "Tokenizer/model must have chat template for sonnet dataset."
-            )
+            assert (
+                tokenizer.chat_template or tokenizer.default_chat_template
+            ), "Tokenizer/model must have chat template for sonnet dataset."
             input_requests = dataset.sample(
                 num_requests=args.num_prompts,
                 input_len=args.sonnet_input_len,
@@ -710,7 +710,9 @@ def main(args: argparse.Namespace):
         elif args.dataset_path in AIMODataset.SUPPORTED_DATASET_PATHS:
             dataset_class = AIMODataset
             args.hf_split = "train"
-        elif args.dataset_path in NextEditPredictionDataset.SUPPORTED_DATASET_PATHS:  # noqa: E501
+        elif (
+            args.dataset_path in NextEditPredictionDataset.SUPPORTED_DATASET_PATHS
+        ):  # noqa: E501
             dataset_class = NextEditPredictionDataset
             args.hf_split = "train"
         elif args.dataset_path in ASRDataset.SUPPORTED_DATASET_PATHS:

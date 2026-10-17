@@ -76,6 +76,7 @@ def _run_single(
                     column_major_scales=column_major,
                     use_ue8m0=scale_ue8m0,
                 )
+
     elif dtype == "int8":
 
         def cuda_impl():
@@ -84,6 +85,7 @@ def _run_single(
         def triton_impl():
             with _triton_mode():
                 return int8_utils.per_token_group_quant_int8(x, group_size)
+
     else:
         raise ValueError("dtype must be 'fp8' or 'int8'")
 

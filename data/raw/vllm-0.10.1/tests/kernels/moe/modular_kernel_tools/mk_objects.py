@@ -8,24 +8,33 @@ import torch
 # Fused experts and PrepareFinalize imports
 import vllm.model_executor.layers.fused_moe.modular_kernel as mk
 from vllm.model_executor.layers.fused_moe.batched_deep_gemm_moe import (
-    BatchedDeepGemmExperts)
+    BatchedDeepGemmExperts,
+)
 from vllm.model_executor.layers.fused_moe.batched_triton_or_deep_gemm_moe import (  # noqa: E501
-    BatchedTritonOrDeepGemmExperts)
-from vllm.model_executor.layers.fused_moe.config import (FusedMoEConfig,
-                                                         FusedMoEQuantConfig)
+    BatchedTritonOrDeepGemmExperts,
+)
+from vllm.model_executor.layers.fused_moe.config import (
+    FusedMoEConfig,
+    FusedMoEQuantConfig,
+)
 from vllm.model_executor.layers.fused_moe.deep_gemm_moe import DeepGemmExperts
 from vllm.model_executor.layers.fused_moe.fused_batched_moe import (
-    BatchedTritonExperts, NaiveBatchedExperts)
-from vllm.model_executor.layers.fused_moe.layer import (FusedMoEMethodBase,
-                                                        TritonExperts)
+    BatchedTritonExperts,
+    NaiveBatchedExperts,
+)
+from vllm.model_executor.layers.fused_moe.layer import FusedMoEMethodBase, TritonExperts
 from vllm.model_executor.layers.fused_moe.prepare_finalize import (
-    MoEPrepareAndFinalizeNoEP)
+    MoEPrepareAndFinalizeNoEP,
+)
 from vllm.model_executor.layers.fused_moe.triton_deep_gemm_moe import (
-    TritonOrDeepGemmExperts)
+    TritonOrDeepGemmExperts,
+)
 from vllm.model_executor.layers.quantization.utils.quant_utils import (
-    cutlass_fp4_supported)
+    cutlass_fp4_supported,
+)
 from vllm.model_executor.layers.quantization.utils.w8a8_utils import (
-    cutlass_fp8_supported)
+    cutlass_fp8_supported,
+)
 from vllm.platforms import current_platform
 from vllm.utils import has_deep_ep, has_deep_gemm, has_pplx
 from vllm.utils.deep_gemm import is_deep_gemm_supported
@@ -52,8 +61,7 @@ class ExpertInfo:
     needs_deep_gemm: bool = False
 
 
-PREPARE_FINALIZE_INFO: dict[mk.FusedMoEPrepareAndFinalize,
-                            PrepareFinalizeInfo] = {}
+PREPARE_FINALIZE_INFO: dict[mk.FusedMoEPrepareAndFinalize, PrepareFinalizeInfo] = {}
 EXPERT_INFO: dict[mk.FusedMoEPermuteExpertsUnpermute, ExpertInfo] = {}
 MK_ALL_PREPARE_FINALIZE_TYPES: list[mk.FusedMoEPrepareAndFinalize] = []
 MK_MULTI_GPU_PREPARE_FINALIZE_TYPES: list[mk.FusedMoEPrepareAndFinalize] = []
@@ -63,7 +71,10 @@ MK_FUSED_EXPERT_TYPES: list[mk.FusedMoEPermuteExpertsUnpermute] = []
 standard_format = mk.FusedMoEActivationFormat.Standard
 batched_format = mk.FusedMoEActivationFormat.BatchedExperts
 common_float_types: list[Union[torch.dtype, str]] = [
-    torch.float8_e4m3fn, torch.bfloat16, torch.float16, torch.float32
+    torch.float8_e4m3fn,
+    torch.bfloat16,
+    torch.float16,
+    torch.float32,
 ]
 common_float_and_int_types = common_float_types + [torch.int8]
 nv_fp4_types = ["nvfp4"]
@@ -178,9 +189,11 @@ register_experts(
 # Disable on blackwell for now
 if has_deep_ep() and not current_platform.has_device_capability(100):
     from vllm.model_executor.layers.fused_moe.deepep_ht_prepare_finalize import (  # noqa: E501
-        DeepEPHTPrepareAndFinalize)
+        DeepEPHTPrepareAndFinalize,
+    )
     from vllm.model_executor.layers.fused_moe.deepep_ll_prepare_finalize import (  # noqa: E501
-        DeepEPLLPrepareAndFinalize)
+        DeepEPLLPrepareAndFinalize,
+    )
 
     register_prepare_and_finalize(
         DeepEPHTPrepareAndFinalize,
@@ -200,7 +213,9 @@ if has_deep_ep() and not current_platform.has_device_capability(100):
 
 if has_pplx():
     from vllm.model_executor.layers.fused_moe.pplx_prepare_finalize import (
-        PplxPrepareAndFinalize)
+        PplxPrepareAndFinalize,
+    )
+
     register_prepare_and_finalize(
         PplxPrepareAndFinalize,
         batched_format,
@@ -209,12 +224,13 @@ if has_pplx():
         backend="pplx",
     )
 
-if (has_flashinfer_cutlass_fused_moe()
-        and current_platform.has_device_capability(100)):
+if has_flashinfer_cutlass_fused_moe() and current_platform.has_device_capability(100):
     from vllm.model_executor.layers.fused_moe.flashinfer_cutlass_moe import (  # noqa: E501
-        FlashInferExperts)
+        FlashInferExperts,
+    )
     from vllm.model_executor.layers.fused_moe.flashinfer_cutlass_prepare_finalize import (  # noqa: E501
-        FlashInferCutlassMoEPrepareAndFinalize)
+        FlashInferCutlassMoEPrepareAndFinalize,
+    )
 
     register_prepare_and_finalize(
         FlashInferCutlassMoEPrepareAndFinalize,
@@ -281,8 +297,11 @@ if has_deep_gemm() and is_deep_gemm_supported():
     )
 
 if cutlass_fp8_supported():
-    from vllm.model_executor.layers.fused_moe import (CutlassBatchedExpertsFp8,
-                                                      CutlassExpertsFp8)
+    from vllm.model_executor.layers.fused_moe import (
+        CutlassBatchedExpertsFp8,
+        CutlassExpertsFp8,
+    )
+
     register_experts(
         CutlassExpertsFp8,
         standard_format,
@@ -301,8 +320,8 @@ if cutlass_fp8_supported():
     )
 
 if cutlass_fp4_supported():
-    from vllm.model_executor.layers.fused_moe.cutlass_moe import (
-        CutlassExpertsFp4)
+    from vllm.model_executor.layers.fused_moe.cutlass_moe import CutlassExpertsFp4
+
     register_experts(
         CutlassExpertsFp4,
         standard_format,
@@ -315,30 +334,40 @@ if cutlass_fp4_supported():
 MK_QUANT_CONFIGS = [
     None,
     # per-channel / per-column weights and per-tensor activations
-    FusedMoEQuantConfig(quant_dtype=torch.float8_e4m3fn,
-                        per_out_ch_quant=True,
-                        per_act_token_quant=False,
-                        block_shape=None),
+    FusedMoEQuantConfig(
+        quant_dtype=torch.float8_e4m3fn,
+        per_out_ch_quant=True,
+        per_act_token_quant=False,
+        block_shape=None,
+    ),
     # per-channel / per-column weights and per-token activations
-    FusedMoEQuantConfig(quant_dtype=torch.float8_e4m3fn,
-                        per_out_ch_quant=True,
-                        per_act_token_quant=True,
-                        block_shape=None),
+    FusedMoEQuantConfig(
+        quant_dtype=torch.float8_e4m3fn,
+        per_out_ch_quant=True,
+        per_act_token_quant=True,
+        block_shape=None,
+    ),
     # per-tensor weights and per-tensor activations
-    FusedMoEQuantConfig(quant_dtype=torch.float8_e4m3fn,
-                        per_out_ch_quant=False,
-                        per_act_token_quant=False,
-                        block_shape=None),
+    FusedMoEQuantConfig(
+        quant_dtype=torch.float8_e4m3fn,
+        per_out_ch_quant=False,
+        per_act_token_quant=False,
+        block_shape=None,
+    ),
     # per-tensor weights and per-token activations
-    FusedMoEQuantConfig(quant_dtype=torch.float8_e4m3fn,
-                        per_out_ch_quant=False,
-                        per_act_token_quant=True,
-                        block_shape=None),
+    FusedMoEQuantConfig(
+        quant_dtype=torch.float8_e4m3fn,
+        per_out_ch_quant=False,
+        per_act_token_quant=True,
+        block_shape=None,
+    ),
     # block-quantized weights and 128 block per-token activations
-    FusedMoEQuantConfig(quant_dtype=torch.float8_e4m3fn,
-                        per_out_ch_quant=False,
-                        per_act_token_quant=False,
-                        block_shape=[128, 128]),
+    FusedMoEQuantConfig(
+        quant_dtype=torch.float8_e4m3fn,
+        per_out_ch_quant=False,
+        per_act_token_quant=False,
+        block_shape=[128, 128],
+    ),
     # TODO (varun) : Should we test the following combinations ?
     # block-quantized weights and per-token activations
     # block-quantized weights and per-tensor activations
@@ -346,17 +375,19 @@ MK_QUANT_CONFIGS = [
 
 if cutlass_fp4_supported() or has_flashinfer_cutlass_fused_moe():
     MK_QUANT_CONFIGS += [
-        FusedMoEQuantConfig(quant_dtype="nvfp4",
-                            per_out_ch_quant=False,
-                            per_act_token_quant=False,
-                            block_shape=None),
+        FusedMoEQuantConfig(
+            quant_dtype="nvfp4",
+            per_out_ch_quant=False,
+            per_act_token_quant=False,
+            block_shape=None,
+        ),
     ]
 
 
 def _make_gscale(num_experts: int) -> torch.Tensor:
-    return torch.ones((num_experts, ),
-                      device=torch.cuda.current_device(),
-                      dtype=torch.float32)
+    return torch.ones(
+        (num_experts,), device=torch.cuda.current_device(), dtype=torch.float32
+    )
 
 
 def make_prepare_finalize(

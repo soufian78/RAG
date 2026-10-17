@@ -42,18 +42,22 @@ async def client(server):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("stream", [True, False])
-@pytest.mark.parametrize("tool_choice", [
-    "auto", "required", {
-        "type": "function",
-        "function": {
-            "name": "get_current_weather"
-        }
-    }
-])
+@pytest.mark.parametrize(
+    "tool_choice",
+    [
+        "auto",
+        "required",
+        {"type": "function", "function": {"name": "get_current_weather"}},
+    ],
+)
 @pytest.mark.parametrize("enable_thinking", [True, False])
-async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
-                                 stream: bool, tool_choice: Union[str, dict],
-                                 enable_thinking: bool):
+async def test_function_tool_use(
+    client: openai.AsyncOpenAI,
+    model_name: str,
+    stream: bool,
+    tool_choice: Union[str, dict],
+    enable_thinking: bool,
+):
     tools = [
         {
             "type": "function",
@@ -65,26 +69,21 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
                     "properties": {
                         "city": {
                             "type": "string",
-                            "description":
-                            "The city to find the weather for, e.g. 'Vienna'",
+                            "description": "The city to find the weather for, e.g. 'Vienna'",
                             "default": "Vienna",
                         },
                         "country": {
-                            "type":
-                            "string",
-                            "description":
-                            "The country that the city is in, e.g. 'Austria'",
+                            "type": "string",
+                            "description": "The country that the city is in, e.g. 'Austria'",
                         },
                         "unit": {
                             "type": "string",
-                            "description":
-                            "The unit to fetch the temperature in",
+                            "description": "The unit to fetch the temperature in",
                             "enum": ["celsius", "fahrenheit"],
                         },
                         "options": {
                             "$ref": "#/$defs/WeatherOptions",
-                            "description":
-                            "Optional parameters for weather query",
+                            "description": "Optional parameters for weather query",
                         },
                     },
                     "required": ["country", "unit"],
@@ -104,8 +103,7 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
                                 "include_forecast": {
                                     "type": "boolean",
                                     "default": False,
-                                    "description":
-                                    "Whether to include a 24-hour forecast",
+                                    "description": "Whether to include a 24-hour forecast",
                                     "title": "Include Forecast",
                                 },
                                 "language": {
@@ -131,26 +129,20 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
                     "properties": {
                         "city": {
                             "type": "string",
-                            "description":
-                            "The city to get the forecast for, e.g. 'Vienna'",
+                            "description": "The city to get the forecast for, e.g. 'Vienna'",
                             "default": "Vienna",
                         },
                         "country": {
-                            "type":
-                            "string",
-                            "description":
-                            "The country that the city is in, e.g. 'Austria'",
+                            "type": "string",
+                            "description": "The country that the city is in, e.g. 'Austria'",
                         },
                         "days": {
-                            "type":
-                            "integer",
-                            "description":
-                            "Number of days to get the forecast for (1-7)",
+                            "type": "integer",
+                            "description": "Number of days to get the forecast for (1-7)",
                         },
                         "unit": {
                             "type": "string",
-                            "description":
-                            "The unit to fetch the temperature in",
+                            "description": "The unit to fetch the temperature in",
                             "enum": ["celsius", "fahrenheit"],
                         },
                     },
@@ -161,19 +153,11 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
     ]
 
     messages = [
+        {"role": "user", "content": "Hi! How are you doing today?"},
+        {"role": "assistant", "content": "I'm doing well! How can I help you?"},
         {
             "role": "user",
-            "content": "Hi! How are you doing today?"
-        },
-        {
-            "role": "assistant",
-            "content": "I'm doing well! How can I help you?"
-        },
-        {
-            "role":
-            "user",
-            "content":
-            "Can you tell me what the current weather is in Berlin and the "\
+            "content": "Can you tell me what the current weather is in Berlin and the "
             "forecast for the next 5 days, in fahrenheit?",
         },
     ]
@@ -184,16 +168,11 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
             model=model_name,
             tools=tools,
             tool_choice=tool_choice,
-            extra_body={
-                "chat_template_kwargs": {
-                    "enable_thinking": enable_thinking
-                }
-            })
+            extra_body={"chat_template_kwargs": {"enable_thinking": enable_thinking}},
+        )
         if enable_thinking:
-            assert chat_completion.choices[0].message.\
-                reasoning_content is not None
-            assert chat_completion.choices[0].message.\
-                reasoning_content != ""
+            assert chat_completion.choices[0].message.reasoning_content is not None
+            assert chat_completion.choices[0].message.reasoning_content != ""
         assert chat_completion.choices[0].message.tool_calls is not None
         assert len(chat_completion.choices[0].message.tool_calls) > 0
     else:
@@ -204,11 +183,8 @@ async def test_function_tool_use(client: openai.AsyncOpenAI, model_name: str,
             tools=tools,
             tool_choice=tool_choice,
             stream=True,
-            extra_body={
-                "chat_template_kwargs": {
-                    "enable_thinking": enable_thinking
-                }
-            })
+            extra_body={"chat_template_kwargs": {"enable_thinking": enable_thinking}},
+        )
 
         output = []
         async for chunk in output_stream:

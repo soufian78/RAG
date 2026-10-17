@@ -129,7 +129,7 @@ def bench_run(
     def gen_marlin_24_params():
         marlin_24_w_ref = marlin_24_q_w_comp = marlin_24_meta = marlin_24_s = None
         if marlin_24_supported:
-            (marlin_24_w_ref, marlin_24_q_w_comp, marlin_24_meta, marlin_24_s) = (
+            marlin_24_w_ref, marlin_24_q_w_comp, marlin_24_meta, marlin_24_s = (
                 marlin_24_quantize(b, quant_type, group_size)
             )
         return (marlin_24_w_ref, marlin_24_q_w_comp, marlin_24_meta, marlin_24_s)
@@ -138,7 +138,7 @@ def bench_run(
         q_w_gptq = None
         repack_sort_indices = None
         if repack_supported:
-            (w_ref, q_w, s, g_idx, rand_perm) = gptq_quantize_weights(
+            w_ref, q_w, s, g_idx, rand_perm = gptq_quantize_weights(
                 b, quant_type, group_size, act_order
             )
             q_w_gptq = gptq_pack(q_w, quant_type.size_bits, size_k, size_n)
@@ -147,7 +147,7 @@ def bench_run(
             # so that group ids are increasing
             repack_sort_indices = torch.empty(0, dtype=torch.int, device=b.device)
             if act_order:
-                (q_w, g_idx, repack_sort_indices) = sort_weights(q_w, g_idx)
+                q_w, g_idx, repack_sort_indices = sort_weights(q_w, g_idx)
         return q_w_gptq, repack_sort_indices
 
     def gen_allspark_params():

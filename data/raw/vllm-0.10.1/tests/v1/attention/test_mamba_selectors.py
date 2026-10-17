@@ -8,8 +8,10 @@ from vllm.v1.attention.backends.mamba2_attn import Mamba2AttentionBackend
 from vllm.v1.attention.backends.mamba_selectors import get_mamba_attn_backend
 
 
-@pytest.mark.parametrize(argnames=["mamba_type", "expected_backend"],
-                         argvalues=[("mamba2", Mamba2AttentionBackend)])
+@pytest.mark.parametrize(
+    argnames=["mamba_type", "expected_backend"],
+    argvalues=[("mamba2", Mamba2AttentionBackend)],
+)
 def test_get_mamba_attn_backend_mamba2(mamba_type, expected_backend):
     backend_class = get_mamba_attn_backend(mamba_type)
 

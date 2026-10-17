@@ -16,13 +16,13 @@ def test_mp_reducer(monkeypatch):
     """
 
     # Use V1 AsyncLLM which calls maybe_register_config_serialize_by_value
-    monkeypatch.setenv('VLLM_USE_V1', '1')
+    monkeypatch.setenv("VLLM_USE_V1", "1")
 
     # Ensure transformers_modules is not in sys.modules
-    if 'transformers_modules' in sys.modules:
-        del sys.modules['transformers_modules']
+    if "transformers_modules" in sys.modules:
+        del sys.modules["transformers_modules"]
 
-    with patch('multiprocessing.reducer.register') as mock_register:
+    with patch("multiprocessing.reducer.register") as mock_register:
         engine_args = AsyncEngineArgs(
             model="facebook/opt-125m",
             max_model_len=32,
@@ -35,8 +35,9 @@ def test_mp_reducer(monkeypatch):
             start_engine_loop=False,
         )
 
-        assert mock_register.called, (
-            "multiprocessing.reducer.register should have been called")
+        assert (
+            mock_register.called
+        ), "multiprocessing.reducer.register should have been called"
 
         vllm_config_registered = False
         for call_args in mock_register.call_args_list:
@@ -45,12 +46,11 @@ def test_mp_reducer(monkeypatch):
                 vllm_config_registered = True
 
                 reducer_func = call_args[0][1]
-                assert callable(
-                    reducer_func), "Reducer function should be callable"
+                assert callable(reducer_func), "Reducer function should be callable"
                 break
 
-        assert vllm_config_registered, (
-            "VllmConfig should have been registered to multiprocessing.reducer"
-        )
+        assert (
+            vllm_config_registered
+        ), "VllmConfig should have been registered to multiprocessing.reducer"
 
         async_llm.shutdown()

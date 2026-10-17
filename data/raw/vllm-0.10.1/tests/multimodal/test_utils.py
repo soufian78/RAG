@@ -15,12 +15,17 @@ from PIL import Image, ImageChops
 
 from tests.utils import multi_gpu_test
 from vllm.distributed import get_tensor_model_parallel_world_size
-from vllm.distributed.parallel_state import (init_distributed_environment,
-                                             initialize_model_parallel)
+from vllm.distributed.parallel_state import (
+    init_distributed_environment,
+    initialize_model_parallel,
+)
 from vllm.multimodal.image import convert_image_mode
 from vllm.multimodal.inputs import PlaceholderRange
-from vllm.multimodal.utils import (MediaConnector, argsort_mm_positions,
-                                   run_dp_sharded_vision_model)
+from vllm.multimodal.utils import (
+    MediaConnector,
+    argsort_mm_positions,
+    run_dp_sharded_vision_model,
+)
 from vllm.platforms import current_platform
 from vllm.utils import get_open_port, update_environment_variables
 
@@ -46,17 +51,16 @@ def url_images() -> dict[str, Image.Image]:
     connector = MediaConnector()
 
     return {
-        image_url: connector.fetch_image(image_url)
-        for image_url in TEST_IMAGE_URLS
+        image_url: connector.fetch_image(image_url) for image_url in TEST_IMAGE_URLS
     }
 
 
 def get_supported_suffixes() -> tuple[str, ...]:
     # We should at least test the file types mentioned in GPT-4 with Vision
-    OPENAI_SUPPORTED_SUFFIXES = ('.png', '.jpeg', '.jpg', '.webp', '.gif')
+    OPENAI_SUPPORTED_SUFFIXES = (".png", ".jpeg", ".jpg", ".webp", ".gif")
 
     # Additional file types that are supported by us
-    EXTRA_SUPPORTED_SUFFIXES = ('.bmp', '.tiff')
+    EXTRA_SUPPORTED_SUFFIXES = (".bmp", ".tiff")
 
     return OPENAI_SUPPORTED_SUFFIXES + EXTRA_SUPPORTED_SUFFIXES
 
@@ -78,8 +82,9 @@ async def test_fetch_image_http(image_url: str):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("image_url", TEST_IMAGE_URLS)
 @pytest.mark.parametrize("suffix", get_supported_suffixes())
-async def test_fetch_image_base64(url_images: dict[str, Image.Image],
-                                  image_url: str, suffix: str):
+async def test_fetch_image_base64(
+    url_images: dict[str, Image.Image], image_url: str, suffix: str
+):
     connector = MediaConnector()
     url_image = url_images[image_url]
 
@@ -89,14 +94,14 @@ async def test_fetch_image_base64(url_images: dict[str, Image.Image],
         try:
             mime_type = mimetypes.types_map[suffix]
         except KeyError:
-            pytest.skip('No MIME type')
+            pytest.skip("No MIME type")
 
     with NamedTemporaryFile(suffix=suffix) as f:
         try:
             url_image.save(f.name)
         except Exception as e:
-            if e.args[0] == 'cannot write mode RGBA as JPEG':
-                pytest.skip('Conversion not supported')
+            if e.args[0] == "cannot write mode RGBA as JPEG":
+                pytest.skip("Conversion not supported")
 
             raise
 
@@ -122,30 +127,36 @@ async def test_fetch_image_local_files(image_url: str):
         local_connector = MediaConnector(allowed_local_media_path=temp_dir)
 
         origin_image = connector.fetch_image(image_url)
-        origin_image.save(os.path.join(temp_dir, os.path.basename(image_url)),
-                          quality=100,
-                          icc_profile=origin_image.info.get('icc_profile'))
+        origin_image.save(
+            os.path.join(temp_dir, os.path.basename(image_url)),
+            quality=100,
+            icc_profile=origin_image.info.get("icc_profile"),
+        )
 
         image_async = await local_connector.fetch_image_async(
-            f"file://{temp_dir}/{os.path.basename(image_url)}")
+            f"file://{temp_dir}/{os.path.basename(image_url)}"
+        )
         image_sync = local_connector.fetch_image(
-            f"file://{temp_dir}/{os.path.basename(image_url)}")
+            f"file://{temp_dir}/{os.path.basename(image_url)}"
+        )
         # Check that the images are equal
         assert not ImageChops.difference(image_sync, image_async).getbbox()
 
         with pytest.raises(ValueError, match="must be a subpath"):
             await local_connector.fetch_image_async(
-                f"file://{temp_dir}/../{os.path.basename(image_url)}")
+                f"file://{temp_dir}/../{os.path.basename(image_url)}"
+            )
         with pytest.raises(RuntimeError, match="Cannot load local files"):
             await connector.fetch_image_async(
-                f"file://{temp_dir}/../{os.path.basename(image_url)}")
+                f"file://{temp_dir}/../{os.path.basename(image_url)}"
+            )
 
         with pytest.raises(ValueError, match="must be a subpath"):
             local_connector.fetch_image(
-                f"file://{temp_dir}/../{os.path.basename(image_url)}")
+                f"file://{temp_dir}/../{os.path.basename(image_url)}"
+            )
         with pytest.raises(RuntimeError, match="Cannot load local files"):
-            connector.fetch_image(
-                f"file://{temp_dir}/../{os.path.basename(image_url)}")
+            connector.fetch_image(f"file://{temp_dir}/../{os.path.basename(image_url)}")
 
 
 @pytest.mark.asyncio
@@ -158,18 +169,19 @@ async def test_fetch_image_local_files_with_space_in_name():
 
         origin_image = connector.fetch_image(image_url)
         filename = "file name with space.jpg"
-        origin_image.save(os.path.join(temp_dir, filename),
-                          quality=100,
-                          icc_profile=origin_image.info.get('icc_profile'))
+        origin_image.save(
+            os.path.join(temp_dir, filename),
+            quality=100,
+            icc_profile=origin_image.info.get("icc_profile"),
+        )
 
         try:
             image_async = await local_connector.fetch_image_async(
-                f"file://{temp_dir}/{filename}")
-            image_sync = local_connector.fetch_image(
-                f"file://{temp_dir}/{filename}")
+                f"file://{temp_dir}/{filename}"
+            )
+            image_sync = local_connector.fetch_image(f"file://{temp_dir}/{filename}")
         except FileNotFoundError as e:
-            pytest.fail(
-                "Failed to fetch image with space in name: {}".format(e))
+            pytest.fail("Failed to fetch image with space in name: {}".format(e))
         # Check that the images are equal
         assert not ImageChops.difference(image_sync, image_async).getbbox()
 
@@ -192,9 +204,12 @@ async def test_fetch_image_error_conversion():
 @pytest.mark.parametrize("num_frames", [-1, 32, 1800])
 async def test_fetch_video_http(video_url: str, num_frames: int):
     connector = MediaConnector(
-        media_io_kwargs={"video": {
-            "num_frames": num_frames,
-        }})
+        media_io_kwargs={
+            "video": {
+                "num_frames": num_frames,
+            }
+        }
+    )
 
     video_sync, metadata_sync = connector.fetch_video(video_url)
     video_async, metadata_async = await connector.fetch_video_async(video_url)
@@ -238,7 +253,6 @@ def test_argsort_mm_positions():
                 ("image", 0),
             ],
         ),
-
         # Two modalities
         ## Internally sorted
         TestCase(
@@ -250,7 +264,7 @@ def test_argsort_mm_positions():
                 "audio": [
                     PlaceholderRange(offset=0, length=2),
                     PlaceholderRange(offset=2, length=3),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("audio", 0),
@@ -269,7 +283,7 @@ def test_argsort_mm_positions():
                 "audio": [
                     PlaceholderRange(offset=5, length=2),
                     PlaceholderRange(offset=11, length=4),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("image", 0),
@@ -288,7 +302,7 @@ def test_argsort_mm_positions():
                 "audio": [
                     PlaceholderRange(offset=11, length=4),
                     PlaceholderRange(offset=5, length=2),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("image", 1),
@@ -297,7 +311,6 @@ def test_argsort_mm_positions():
                 ("audio", 0),
             ],
         ),
-
         # Three modalities
         ## Internally sorted
         TestCase(
@@ -313,7 +326,7 @@ def test_argsort_mm_positions():
                     PlaceholderRange(offset=3, length=4),
                     PlaceholderRange(offset=7, length=5),
                     PlaceholderRange(offset=12, length=6),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("audio", 0),
@@ -337,7 +350,7 @@ def test_argsort_mm_positions():
                 ],
                 "video": [
                     PlaceholderRange(offset=8, length=5),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("image", 0),
@@ -360,7 +373,7 @@ def test_argsort_mm_positions():
                 ],
                 "video": [
                     PlaceholderRange(offset=8, length=5),
-                ]
+                ],
             },
             expected_modality_idxs=[
                 ("image", 0),
@@ -415,10 +428,11 @@ def test_run_dp_sharded_vision_model(batch_size: int):
     )
 
 
-def run_dp_sharded_vision_model_vs_direct(local_rank: int, world_size: int,
-                                          batch_size: int, master_port: int):
+def run_dp_sharded_vision_model_vs_direct(
+    local_rank: int, world_size: int, batch_size: int, master_port: int
+):
     """
-    Test that run_dp_sharded_vision_model produces the same results as 
+    Test that run_dp_sharded_vision_model produces the same results as
     calling the model directly.
     """
 
@@ -429,13 +443,15 @@ def run_dp_sharded_vision_model_vs_direct(local_rank: int, world_size: int,
     torch.cuda.set_device(device)
     torch.set_default_device(device)
 
-    update_environment_variables({
-        'RANK': str(local_rank),
-        'LOCAL_RANK': str(local_rank),
-        'WORLD_SIZE': str(world_size),
-        'MASTER_ADDR': 'localhost',
-        'MASTER_PORT': str(master_port),
-    })
+    update_environment_variables(
+        {
+            "RANK": str(local_rank),
+            "LOCAL_RANK": str(local_rank),
+            "WORLD_SIZE": str(world_size),
+            "MASTER_ADDR": "localhost",
+            "MASTER_PORT": str(master_port),
+        }
+    )
 
     # initialize distributed
     init_distributed_environment()

@@ -824,7 +824,13 @@ def as_benchmark_contexts(
     hidden_sizes: list[int], lora_ranks: list[int], args: argparse.Namespace
 ) -> list[BenchmarkContext]:
     ctxs: list[BenchmarkContext] = []
-    for batch_size, hidden_size, lora_rank, num_loras, sort_by_lora_id in product(  # noqa
+    for (
+        batch_size,
+        hidden_size,
+        lora_rank,
+        num_loras,
+        sort_by_lora_id,
+    ) in product(  # noqa
         args.batch_sizes,
         list(hidden_sizes),
         lora_ranks,
@@ -837,9 +843,9 @@ def as_benchmark_contexts(
                 hidden_size=hidden_size,
                 lora_rank=lora_rank,
                 num_loras=num_loras,
-                num_active_loras=args.num_active_loras
-                if args.num_active_loras
-                else num_loras,
+                num_active_loras=(
+                    args.num_active_loras if args.num_active_loras else num_loras
+                ),
                 # To be filled based on the OpType to benchmark
                 seq_length=None,
                 sort_by_lora_id=sort_by_lora_id,

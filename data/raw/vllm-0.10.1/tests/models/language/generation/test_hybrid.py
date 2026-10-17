@@ -41,7 +41,7 @@ HF_UNSUPPORTED_MODELS = [
     "yujiepan/mamba2-codestral-v0.1-tiny-random",
     # transformers 4.55 is still producing garbage for this model
     # TODO(tdoublep): follow-up on transformers side
-    "ibm-granite/granite-4.0-tiny-preview"
+    "ibm-granite/granite-4.0-tiny-preview",
 ]
 
 V1_SUPPORTED_MODELS = [
@@ -81,8 +81,7 @@ def test_models(
     try:
         model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
         model_info.check_available_online(on_fail="skip")
-        hf_version_check = model_info.check_transformers_version(
-            on_fail="return")
+        hf_version_check = model_info.check_transformers_version(on_fail="return")
     except ValueError:
         hf_version_check = None
 
@@ -92,13 +91,15 @@ def test_models(
     with hf_runner(model) as hf_model:
         if model not in HF_UNSUPPORTED_MODELS and hf_version_check is None:
             hf_outputs = hf_model.generate_greedy_logprobs_limit(
-                example_prompts, max_tokens, num_logprobs)
+                example_prompts, max_tokens, num_logprobs
+            )
         else:
             hf_outputs = None
 
     with vllm_runner(model, max_num_seqs=MAX_NUM_SEQS) as vllm_model:
         vllm_v0_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     if model in V1_SUPPORTED_MODELS:
         enforce_eager = False
@@ -111,12 +112,15 @@ def test_models(
             if model in ENFORCE_EAGER_MODELS_V1:
                 enforce_eager = True
 
-            with vllm_runner(model,
-                             max_num_seqs=MAX_NUM_SEQS,
-                             enforce_eager=enforce_eager,
-                             enable_prefix_caching=False) as vllm_model:
+            with vllm_runner(
+                model,
+                max_num_seqs=MAX_NUM_SEQS,
+                enforce_eager=enforce_eager,
+                enable_prefix_caching=False,
+            ) as vllm_model:
                 vllm_v1_outputs = vllm_model.generate_greedy_logprobs(
-                    example_prompts, max_tokens, num_logprobs)
+                    example_prompts, max_tokens, num_logprobs
+                )
     else:
         vllm_v1_outputs = None
 
@@ -159,13 +163,14 @@ def test_batching(
     for_loop_outputs = []
     with vllm_runner(model, max_num_seqs=MAX_NUM_SEQS) as vllm_model:
         for prompt in example_prompts:
-            single_output, = vllm_model.generate_greedy_logprobs([prompt],
-                                                                 max_tokens,
-                                                                 num_logprobs)
+            (single_output,) = vllm_model.generate_greedy_logprobs(
+                [prompt], max_tokens, num_logprobs
+            )
             for_loop_outputs.append(single_output)
 
         batched_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     check_logprobs_close(
         outputs_0_lst=for_loop_outputs,
@@ -190,18 +195,22 @@ def test_chunked_prefill(
     max_num_seqs = chunked_prefill_token_size
     max_num_batched_tokens = chunked_prefill_token_size
 
-    with vllm_runner(model,
-                     enable_chunked_prefill=True,
-                     max_num_batched_tokens=max_num_batched_tokens,
-                     max_num_seqs=max_num_seqs) as vllm_model:
-        chunked = vllm_model.generate_greedy_logprobs(example_prompts,
-                                                      max_tokens, num_logprobs)
+    with vllm_runner(
+        model,
+        enable_chunked_prefill=True,
+        max_num_batched_tokens=max_num_batched_tokens,
+        max_num_seqs=max_num_seqs,
+    ) as vllm_model:
+        chunked = vllm_model.generate_greedy_logprobs(
+            example_prompts, max_tokens, num_logprobs
+        )
 
-    with vllm_runner(model,
-                     enable_chunked_prefill=False,
-                     max_num_seqs=max_num_seqs) as vllm_model:
+    with vllm_runner(
+        model, enable_chunked_prefill=False, max_num_seqs=max_num_seqs
+    ) as vllm_model:
         non_chunked = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     check_logprobs_close(
         outputs_0_lst=chunked,
@@ -220,8 +229,8 @@ def test_chunked_prefill_with_parallel_sampling(
     max_tokens: int,
 ) -> None:
     """
-    Tests chunked prefill in conjunction with n > 1. 
-    
+    Tests chunked prefill in conjunction with n > 1.
+
     In this case, prefill is populated with decoding tokens and
     we test that it doesn't fail.
 
@@ -229,16 +238,13 @@ def test_chunked_prefill_with_parallel_sampling(
     decoding steps inside a chunked prefill forward pass
     (where we have both prefill and decode together)
     """
-    sampling_params = SamplingParams(n=3,
-                                     temperature=1,
-                                     seed=0,
-                                     max_tokens=max_tokens)
+    sampling_params = SamplingParams(n=3, temperature=1, seed=0, max_tokens=max_tokens)
     with vllm_runner(
-            model,
-            enable_chunked_prefill=True,
-            # forces prefill chunks with decoding
-            max_num_batched_tokens=MAX_NUM_SEQS * 3,
-            max_num_seqs=MAX_NUM_SEQS,
+        model,
+        enable_chunked_prefill=True,
+        # forces prefill chunks with decoding
+        max_num_batched_tokens=MAX_NUM_SEQS * 3,
+        max_num_seqs=MAX_NUM_SEQS,
     ) as vllm_model:
         vllm_model.generate(example_prompts, sampling_params)
 
@@ -256,10 +262,8 @@ def test_mamba_cache_cg_padding(
     batch size. If it's not, a torch RuntimeError will be raised because
     tensor dimensions aren't compatible.
     """
-    vllm_config = EngineArgs(model=model,
-                             trust_remote_code=True).create_engine_config()
-    while len(example_prompts) == vllm_config.pad_for_cudagraph(
-            len(example_prompts)):
+    vllm_config = EngineArgs(model=model, trust_remote_code=True).create_engine_config()
+    while len(example_prompts) == vllm_config.pad_for_cudagraph(len(example_prompts)):
         example_prompts.append(example_prompts[0])
 
     try:
@@ -269,7 +273,8 @@ def test_mamba_cache_cg_padding(
         pytest.fail(
             "Couldn't run batch size which is not equal to a Cuda Graph "
             "captured batch size. "
-            "Could be related to mamba cache not padded correctly")
+            "Could be related to mamba cache not padded correctly"
+        )
 
 
 @pytest.mark.parametrize("model", [SSM_MODELS[0], HYBRID_MODELS[0]])
@@ -286,8 +291,7 @@ def test_models_preemption_recompute(
     with vllm_runner(model, max_num_seqs=MAX_NUM_SEQS) as vllm_model:
         scheduler = vllm_model.llm.llm_engine.scheduler[0]
         scheduler.ENABLE_ARTIFICIAL_PREEMPT = True
-        preempt_vllm_outputs = vllm_model.generate_greedy(
-            example_prompts, max_tokens)
+        preempt_vllm_outputs = vllm_model.generate_greedy(example_prompts, max_tokens)
 
         scheduler.ENABLE_ARTIFICIAL_PREEMPT = False
         vllm_outputs = vllm_model.generate_greedy(example_prompts, max_tokens)
@@ -319,8 +323,10 @@ def test_fail_upon_inc_requests_and_finished_requests_lt_available_blocks(
         with vllm_runner(model, max_num_seqs=MAX_NUM_SEQS) as vllm_model:
             vllm_model.generate_greedy([example_prompts[0]] * 100, 10)
     except ValueError:
-        pytest.fail("Hybrid inner state wasn't cleaned up properly between"
-                    "steps finished requests registered unnecessarily ")
+        pytest.fail(
+            "Hybrid inner state wasn't cleaned up properly between"
+            "steps finished requests registered unnecessarily "
+        )
 
 
 @pytest.mark.parametrize("model", [SSM_MODELS[0], HYBRID_MODELS[0]])
@@ -329,10 +335,10 @@ def test_state_cleanup(
     example_prompts,
     model: str,
 ) -> None:
-    """ 
+    """
     This test is for verifying that the Hybrid state is cleaned up between
     steps.
-    
+
     If its not cleaned, an error would be expected.
     """
     try:
@@ -340,8 +346,10 @@ def test_state_cleanup(
             for _ in range(10):
                 vllm_model.generate_greedy([example_prompts[0]] * 100, 1)
     except ValueError:
-        pytest.fail("Hybrid inner state wasn't cleaned up between states, "
-                    "could be related to finished_requests_ids")
+        pytest.fail(
+            "Hybrid inner state wasn't cleaned up between states, "
+            "could be related to finished_requests_ids"
+        )
 
 
 @multi_gpu_test(num_gpus=2)
@@ -355,15 +363,15 @@ def test_distributed_correctness(
     max_tokens: int,
     num_logprobs: int,
 ) -> None:
-    with vllm_runner(model, tensor_parallel_size=1,
-                     max_num_seqs=2) as vllm_model:
+    with vllm_runner(model, tensor_parallel_size=1, max_num_seqs=2) as vllm_model:
         vllm_outputs_tp_1 = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
-    with vllm_runner(model, tensor_parallel_size=2,
-                     max_num_seqs=2) as vllm_model:
+    with vllm_runner(model, tensor_parallel_size=2, max_num_seqs=2) as vllm_model:
         vllm_outputs_tp_2 = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     check_logprobs_close(
         outputs_0_lst=vllm_outputs_tp_1,
@@ -396,25 +404,30 @@ def test_full_cuda_graph(
     with hf_runner(model) as hf_model:
         if model not in HF_UNSUPPORTED_MODELS:
             hf_outputs = hf_model.generate_greedy_logprobs_limit(
-                example_prompts, max_tokens, num_logprobs)
+                example_prompts, max_tokens, num_logprobs
+            )
         else:
             hf_outputs = None
 
     with vllm_runner(model, max_num_seqs=MAX_NUM_SEQS) as vllm_model:
         vllm_v0_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     with monkeypatch.context() as m:
         m.setenv("VLLM_USE_V1", "1")
         if model in HYBRID_MODELS:
             # required due to reorder_batch behaviour
             m.setenv("VLLM_ATTENTION_BACKEND", "FLASHINFER")
-        with vllm_runner(model,
-                         max_num_seqs=MAX_NUM_SEQS,
-                         compilation_config={'full_cuda_graph': True},
-                         enable_prefix_caching=False) as vllm_model:
+        with vllm_runner(
+            model,
+            max_num_seqs=MAX_NUM_SEQS,
+            compilation_config={"full_cuda_graph": True},
+            enable_prefix_caching=False,
+        ) as vllm_model:
             vllm_v1_outputs = vllm_model.generate_greedy_logprobs(
-                example_prompts, max_tokens, num_logprobs)
+                example_prompts, max_tokens, num_logprobs
+            )
 
     if hf_outputs is not None:
         check_logprobs_close(
@@ -456,27 +469,32 @@ def test_fp32_state(
     with hf_runner(model) as hf_model:
         if model not in HF_UNSUPPORTED_MODELS:
             hf_outputs = hf_model.generate_greedy_logprobs_limit(
-                example_prompts, max_tokens, num_logprobs)
+                example_prompts, max_tokens, num_logprobs
+            )
         else:
             hf_outputs = None
 
-    with vllm_runner(model,
-                     max_num_seqs=MAX_NUM_SEQS,
-                     mamba_ssm_cache_dtype="float32") as vllm_model:
+    with vllm_runner(
+        model, max_num_seqs=MAX_NUM_SEQS, mamba_ssm_cache_dtype="float32"
+    ) as vllm_model:
         vllm_v0_outputs = vllm_model.generate_greedy_logprobs(
-            example_prompts, max_tokens, num_logprobs)
+            example_prompts, max_tokens, num_logprobs
+        )
 
     with monkeypatch.context() as m:
         m.setenv("VLLM_USE_V1", "1")
         if model in HYBRID_MODELS:
             # required due to reorder_batch behaviour
             m.setenv("VLLM_ATTENTION_BACKEND", "FLASHINFER")
-        with vllm_runner(model,
-                         max_num_seqs=MAX_NUM_SEQS,
-                         mamba_ssm_cache_dtype="float32",
-                         enable_prefix_caching=False) as vllm_model:
+        with vllm_runner(
+            model,
+            max_num_seqs=MAX_NUM_SEQS,
+            mamba_ssm_cache_dtype="float32",
+            enable_prefix_caching=False,
+        ) as vllm_model:
             vllm_v1_outputs = vllm_model.generate_greedy_logprobs(
-                example_prompts, max_tokens, num_logprobs)
+                example_prompts, max_tokens, num_logprobs
+            )
 
     if hf_outputs is not None:
         check_logprobs_close(

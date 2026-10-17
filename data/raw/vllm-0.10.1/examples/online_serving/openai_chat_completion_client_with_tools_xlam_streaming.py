@@ -138,18 +138,18 @@ def process_stream(response, tool_functions, original_query):
                         hasattr(tool_call_chunk.function, "name")
                         and tool_call_chunk.function.name
                     ):
-                        tool_calls[current_id]["function_name"] = (
-                            tool_call_chunk.function.name
-                        )
+                        tool_calls[current_id][
+                            "function_name"
+                        ] = tool_call_chunk.function.name
                         print(f"Function called: {tool_call_chunk.function.name}")
 
                     if (
                         hasattr(tool_call_chunk.function, "arguments")
                         and tool_call_chunk.function.arguments
                     ):
-                        tool_calls[current_id]["function_args"] += (
-                            tool_call_chunk.function.arguments
-                        )
+                        tool_calls[current_id][
+                            "function_args"
+                        ] += tool_call_chunk.function.arguments
                         print(f"Arguments chunk: {tool_call_chunk.function.arguments}")
 
         # Handle regular content in the stream

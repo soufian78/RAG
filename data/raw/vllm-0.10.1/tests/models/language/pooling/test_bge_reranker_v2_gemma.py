@@ -12,8 +12,9 @@ from ...utils import LASTPoolingRerankModelInfo, RerankModelInfo
 from .mteb_utils import VllmMtebEncoder, mteb_test_rerank_models
 
 RERANK_MODELS = [
-    LASTPoolingRerankModelInfo("BAAI/bge-reranker-v2-gemma",
-                               architecture="GemmaForSequenceClassification"),
+    LASTPoolingRerankModelInfo(
+        "BAAI/bge-reranker-v2-gemma", architecture="GemmaForSequenceClassification"
+    ),
 ]
 
 PROMPT = "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."  # noqa: E501
@@ -21,32 +22,29 @@ PROMPT = "Given a query A and a passage B, determine whether the passage contain
 
 class GemmaRerankerHfRunner(HfRunner):
 
-    def __init__(self,
-                 model_name: str,
-                 dtype: str = "auto",
-                 *args: Any,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self, model_name: str, dtype: str = "auto", *args: Any, **kwargs: Any
+    ) -> None:
         from transformers import AutoModelForCausalLM, AutoTokenizer
+
         super().__init__(model_name, dtype, auto_cls=AutoModelForCausalLM)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name,
-                                                       padding_side='left')
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left")
         self.yes_loc = self.tokenizer.convert_tokens_to_ids("Yes")
 
     @torch.no_grad()
-    def predict(self, prompts: list[list[str]], *args,
-                **kwargs) -> torch.Tensor:
+    def predict(self, prompts: list[list[str]], *args, **kwargs) -> torch.Tensor:
 
         def get_inputs(pairs, tokenizer, prompt=None):
             if prompt is None:
                 prompt = PROMPT
 
             sep = "\n"
-            prompt_inputs = tokenizer(prompt,
-                                      return_tensors=None,
-                                      add_special_tokens=False)["input_ids"]
-            sep_inputs = tokenizer(sep,
-                                   return_tensors=None,
-                                   add_special_tokens=False)["input_ids"]
+            prompt_inputs = tokenizer(
+                prompt, return_tensors=None, add_special_tokens=False
+            )["input_ids"]
+            sep_inputs = tokenizer(sep, return_tensors=None, add_special_tokens=False)[
+                "input_ids"
+            ]
             inputs = []
             for query, passage in pairs:
                 query_inputs = tokenizer(
@@ -70,8 +68,7 @@ class GemmaRerankerHfRunner(HfRunner):
                     return_token_type_ids=False,
                     add_special_tokens=False,
                 )
-                item["input_ids"] = item[
-                    "input_ids"] + sep_inputs + prompt_inputs
+                item["input_ids"] = item["input_ids"] + sep_inputs + prompt_inputs
                 item["attention_mask"] = [1] * len(item["input_ids"])
                 inputs.append(item)
             return tokenizer.pad(
@@ -87,8 +84,14 @@ class GemmaRerankerHfRunner(HfRunner):
             inputs = inputs.to(self.model.device)
             _n_tokens = inputs["input_ids"].shape[1]
             logits = self.model(**inputs, return_dict=True).logits
-            _scores = (logits[:, -1,
-                              self.yes_loc].view(-1, ).float().sigmoid())
+            _scores = (
+                logits[:, -1, self.yes_loc]
+                .view(
+                    -1,
+                )
+                .float()
+                .sigmoid()
+            )
             scores.append(_scores[0].item())
         return torch.Tensor(scores)
 
@@ -103,8 +106,7 @@ class GemmaMtebEncoder(VllmMtebEncoder):
 
     def predict(
         self,
-        sentences: list[tuple[str, str,
-                              Optional[str]]],  # query, corpus, prompt
+        sentences: list[tuple[str, str, Optional[str]]],  # query, corpus, prompt
         *args,
         **kwargs,
     ) -> np.ndarray:
@@ -119,8 +121,9 @@ class GemmaMtebEncoder(VllmMtebEncoder):
 
 
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
-def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo,
-                            monkeypatch) -> None:
+def test_rerank_models_mteb(
+    vllm_runner, model_info: RerankModelInfo, monkeypatch
+) -> None:
     monkeypatch.setenv("VLLM_USE_V1", "0")
 
     assert model_info.architecture == "GemmaForSequenceClassification"
@@ -133,8 +136,10 @@ def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo,
         }
     }
 
-    mteb_test_rerank_models(GemmaRerankerHfRunner,
-                            vllm_runner,
-                            model_info,
-                            vllm_extra_kwargs,
-                            vllm_mteb_encoder=GemmaMtebEncoder)
+    mteb_test_rerank_models(
+        GemmaRerankerHfRunner,
+        vllm_runner,
+        model_info,
+        vllm_extra_kwargs,
+        vllm_mteb_encoder=GemmaMtebEncoder,
+    )

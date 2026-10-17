@@ -475,9 +475,9 @@ def print_timers(timers: list[TMeasurement]):
 def run(args, MKNs: Iterable[tuple[int, int, int]]) -> Iterable[TMeasurement]:
     types = TypeConfig(
         act_type=args.act_type,
-        weight_type=scalar_types.uint4b8
-        if args.group_zero_type is None
-        else scalar_types.uint4,
+        weight_type=(
+            scalar_types.uint4b8 if args.group_zero_type is None else scalar_types.uint4
+        ),
         output_type=args.out_type,
         group_scale_type=args.group_scale_type,
         group_zero_type=args.group_zero_type,
