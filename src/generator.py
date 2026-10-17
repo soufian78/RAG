@@ -1,4 +1,4 @@
-from .models import Chunk, RagDataset
+from .models import Chunk, StudentSearchResults
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .retriever import load_index, search, chunk_to_source
 from functools import lru_cache
@@ -162,18 +162,23 @@ def load_model():
 
     return tokenizer, model
 
-
 def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
+    """Generate answers for all retrieved questions."""
+
     with open(dataset_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    dataset = RagDataset(**data)
+    dataset = StudentSearchResults(**data)
     results = []
 
-    for question in dataset.rag_questions:
-        result = answer_question(question=question.question, k=k)
+    for item in dataset.search_results:
+        # Generate an answer for the question.
+        result = answer_question(
+            question=item.question,
+            k=k,
+        )
 
-        result["question_id"] = question.question_id
+        result["question_id"] = item.question_id
         results.append(result)
 
     return results
