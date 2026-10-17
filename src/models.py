@@ -44,10 +44,24 @@ class MinimalSearchResults(BaseModel):
     question_id: str
     question: str
     retrieved_sources: list[MinimalSource]
+    
+class MinimalAnswer(MinimalSearchResults):
+    """Represent search results for one question with its generated answer."""
+
+    answer: str
+
+
 
 
 class StudentSearchResults(BaseModel):
     """Represent search results for a dataset."""
 
     search_results: list[MinimalSearchResults]
+    k: int
+
+
+class StudentSearchResultsAndAnswer(BaseModel):
+    """Represent search results and generated answers for a dataset."""
+
+    search_results: list[MinimalAnswer]
     k: int

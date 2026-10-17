@@ -1,4 +1,9 @@
-from .models import Chunk, StudentSearchResults
+from .models import (
+    Chunk,
+    StudentSearchResults,
+    StudentSearchResultsAndAnswer,
+    MinimalAnswer,
+)
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .retriever import load_index, search, chunk_to_source
 from functools import lru_cache
@@ -162,30 +167,46 @@ def load_model():
 
     return tokenizer, model
 
-def answer_dataset(dataset_path: str, k: int = 3) -> list[dict]:
+
+def answer_dataset(
+    dataset_path: str,
+    k: int = 3,
+) -> StudentSearchResultsAndAnswer:
     """Generate answers for all retrieved questions."""
 
     with open(dataset_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     dataset = StudentSearchResults(**data)
-    results = []
+    results: list[MinimalAnswer] = []
 
     for item in dataset.search_results:
-        # Generate an answer for the question.
-        result = answer_question(
+        generated = answer_question(
             question=item.question,
             k=k,
         )
 
-        result["question_id"] = item.question_id
+        result = MinimalAnswer(
+            question_id=item.question_id,
+            question=item.question,
+            retrieved_sources=item.retrieved_sources,
+            answer=generated["answer"],
+        )
+
         results.append(result)
 
-    return results
+    return StudentSearchResultsAndAnswer(
+        search_results=results,
+        k=dataset.k,
+    )
+
+
 
 
 def save_generation_results(
-    results: list[dict], dataset_path: str, save_dir: str
+    results: StudentSearchResultsAndAnswer,
+    dataset_path: str,
+    save_dir: str,
 ) -> Path:
     """Save generated answers to a JSON file."""
 
@@ -195,10 +216,14 @@ def save_generation_results(
     output_path = output_dir / Path(dataset_path).name
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
+        json.dump(
+            results.model_dump(),
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     return output_path
-
 
 def run_generation_dataset(
     dataset_path: str,
