@@ -41,7 +41,7 @@ class CLI:
         k: int = 5,
     ) -> None:
         """Generate answers for questions using retrieved search results."""
-        t0 = time.time()
+
 
         output_path = run_generation_dataset(
             dataset_path=student_search_results_path,
@@ -49,8 +49,14 @@ class CLI:
             k=k,
         )
 
-        print(f"Saved to: {output_path} time = {time.time() - t0}")
+        print(f"Saved to: {output_path}")
 
 
 if __name__ == "__main__":
-    fire.Fire(CLI)
+    try:
+        fire.Fire(CLI)
+    except Exception as e:
+        print(e)
+        exit(1)
+    except InterruptedError as e:
+        print(e)
