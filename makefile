@@ -1,8 +1,5 @@
-PYTHON  := uv run python
-ARGS    ?=
-K       ?= 10
-DATASET ?= dataset_docs_public
-SEARCH_DIR := data/output/search_results/UnansweredQuestions
+PYTHON := uv run python
+ARGS   ?=
 
 install:
 	uv sync
@@ -13,13 +10,15 @@ run:
 debug:
 	$(PYTHON) -m pdb -m src $(ARGS)
 
-pipeline:
-	$(PYTHON) -m src index --max_chunk_size 2000
-	$(PYTHON) -m src search_dataset \
-		--dataset_path data/datasets/UnansweredQuestions/$(DATASET).json \
-		--k $(K) --save_directory $(SEARCH_DIR)
-	$(PYTHON) -m src evaluate \
-		--student_search_results_path $(SEARCH_DIR)/$(DATASET).json \
-		--dataset_path data/datasets/AnsweredQuestions/$(DATASET).json
+clean:
+	find . \( -path ./.venv -o -path ./data \) -prune -o \
+		-type d \( -name "__pycache__" -o -name ".mypy_cache" -o -name ".pytest_cache" \) \
+		-exec rm -rf {} +
 
-.PHONY: install run debug pipeline
+lint:
+	uv run flake8 src --exclude=__pycache__
+	uv run mypy src --warn-return-any --warn-unused-ignores --ignore-missing-imports \
+		--disallow-untyped-defs --check-untyped-defs
+
+
+.PHONY: install run debug clean lint lint-strict

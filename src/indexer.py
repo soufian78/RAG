@@ -69,7 +69,11 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
 
         tokenized_corpus.append(tokens)
 
-    return BM25Okapi(tokenized_corpus)
+    return BM25Okapi(
+        tokenized_corpus,
+        k1=2.0,
+        b=0.75,
+    )
 
 
 def save_index(chunks: list[Chunk], bm25: BM25Okapi) -> None:
