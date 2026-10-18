@@ -1,14 +1,13 @@
-
 import json
 from pathlib import Path
 
 from pydantic import ValidationError
 from tqdm import tqdm
 
-from .models import RagDataset, StudentSearchResults
+from .models import RagDataset, StudentSearchResults, MinimalSource
 
 
-def source_iou(source_a, source_b) -> float:
+def source_iou(source_a: MinimalSource, source_b: MinimalSource) -> float:
     """Calculate character-range IoU for sources in the same file."""
 
     if source_a.file_path != source_b.file_path:
@@ -38,10 +37,10 @@ def source_iou(source_a, source_b) -> float:
     if union <= 0:
         return 0.0
 
-    return intersection / union
+    return float(intersection / union)
 
 
-def source_matches(retrieved, expected) -> bool:
+def source_matches(retrieved: MinimalSource, expected: MinimalSource) -> bool:
     """Check whether a retrieved source matches a ground-truth source."""
 
     return source_iou(retrieved, expected) >= 0.05
@@ -57,14 +56,12 @@ def evaluate_search_results(
     ground_truth_path = Path(dataset_path)
 
     if not results_path.is_file():
-        raise FileNotFoundError(
-            f"Search results file not found: {results_path}"
-        )
+        raise FileNotFoundError("Search results file"
+                                f" not found: {results_path}")
 
     if not ground_truth_path.is_file():
-        raise FileNotFoundError(
-            f"Ground-truth dataset not found: {ground_truth_path}"
-        )
+        raise FileNotFoundError("Ground-truth dataset"
+                                f" not found: {ground_truth_path}")
 
     try:
         with results_path.open("r", encoding="utf-8") as file:
@@ -85,16 +82,12 @@ def evaluate_search_results(
         raise ValueError("The saved search results must have k > 0.")
 
     results_by_id = {
-        result.question_id: result
-        for result in student_results.search_results
+        result.question_id: result for result in student_results.search_results
     }
 
     # Evaluate only cutoffs available in the saved results.
-    cutoffs = [
-        cutoff
-        for cutoff in (1, 3, 5, 10)
-        if cutoff <= student_results.k
-    ]
+    cutoffs = [cutoff for cutoff in (1, 3, 5, 10)
+               if cutoff <= student_results.k]
 
     if not cutoffs:
         raise ValueError("No valid Recall@k cutoff is available.")
@@ -106,9 +99,8 @@ def evaluate_search_results(
     ]
 
     if not relevant_questions:
-        raise ValueError(
-            "The ground-truth dataset contains no questions with sources."
-        )
+        raise ValueError("The ground-truth "
+                         "dataset contains no questions with sources.")
 
     recall_totals = {cutoff: 0.0 for cutoff in cutoffs}
 
@@ -118,9 +110,8 @@ def evaluate_search_results(
         unit="question",
     ):
         result = results_by_id.get(question.question_id)
-        retrieved_sources = (
-            result.retrieved_sources if result is not None else []
-        )
+        retrieved_sources = (result.retrieved_sources
+                             if result is not None else [])
 
         for cutoff in cutoffs:
             top_sources = retrieved_sources[:cutoff]
@@ -133,13 +124,9 @@ def evaluate_search_results(
                 ):
                     found_count += 1
 
-            recall_totals[cutoff] += (
-                found_count / len(question.sources)
-            )
+            recall_totals[cutoff] += found_count / len(question.sources)
 
     question_count = len(relevant_questions)
 
-    return {
-        cutoff: total / question_count
-        for cutoff, total in recall_totals.items()
-    }
+    return {cutoff: total / question_count
+            for cutoff, total in recall_totals.items()}

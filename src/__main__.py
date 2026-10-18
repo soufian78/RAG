@@ -1,10 +1,11 @@
 import fire
-import time
 
 from .retriever import run_search_dataset, run_search
 from .indexer import run_index
 from .generator import run_generation_dataset, answer_question
 from .evaluator import evaluate_search_results
+
+
 class CLI:
     """Provide command-line commands to index, search, and answer questions."""
 
@@ -30,13 +31,12 @@ class CLI:
             k=k,
         )
         print(f"Saved to: {output_path}")
-    
+
     def answer(self, query: str, k: int = 3) -> None:
         """Generate an answer for a single question."""
         result = answer_question(question=query, k=k)
         print(result)
-    
-    
+
     def answer_dataset(
         self,
         student_search_results_path: str = (
@@ -47,7 +47,6 @@ class CLI:
     ) -> None:
         """Generate answers for questions using retrieved search results."""
 
-
         output_path = run_generation_dataset(
             dataset_path=student_search_results_path,
             save_directory=save_directory,
@@ -56,7 +55,6 @@ class CLI:
 
         print(f"Saved to: {output_path}")
 
-    
     def evaluate(
         self,
         student_search_results_path: str,

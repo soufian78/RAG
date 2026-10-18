@@ -72,7 +72,7 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
     return BM25Okapi(tokenized_corpus)
 
 
-def save_index(chunks: list[Chunk], bm25: BM25Okapi):
+def save_index(chunks: list[Chunk], bm25: BM25Okapi) -> None:
     """Save chunks and the BM25 index to disk."""
 
     output_dir = Path("data/processed")

@@ -44,13 +44,12 @@ class MinimalSearchResults(BaseModel):
     question_id: str
     question: str
     retrieved_sources: list[MinimalSource]
-    
+
+
 class MinimalAnswer(MinimalSearchResults):
     """Represent search results for one question with its generated answer."""
 
     answer: str
-
-
 
 
 class StudentSearchResults(BaseModel):

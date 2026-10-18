@@ -152,7 +152,7 @@ def search_dataset(
 
 
 def save_search_results(
-    results: StudentSearchResults, dataset_path: str, save_dir
+    results: StudentSearchResults, dataset_path: str, save_dir: str
 ) -> Path:
     """Save search results to a JSON file."""
 

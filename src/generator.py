@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import torch
 import time
+from typing import Any
 
 
 def build_context(chunks: list[Chunk]) -> str:
@@ -102,10 +103,10 @@ def generate_answer(prompt: str) -> str:
 
     prompt_len = inputs["input_ids"].shape[1]
     new_tokens = outputs[0][prompt_len:]
-    answer = tokenizer.decode(new_tokens, skip_special_tokens=True)
 
     print(f"Generation time: {elapsed:.2f} seconds")
 
+    answer: str = str(tokenizer.decode(new_tokens, skip_special_tokens=True))
     return answer.strip()
 
 
@@ -140,7 +141,7 @@ def answer_question(question: str, k: int = 3) -> dict:
     }
 
 
-def test_generation():
+def test_generation() -> None:
     questions = [
         "What does the hello function do?",
         "What is GPU memory used for?",
@@ -157,7 +158,7 @@ def test_generation():
 
 
 @lru_cache(maxsize=1)
-def load_model():
+def load_model() -> tuple[Any, Any]:
     model_name = "Qwen/Qwen3-0.6B"
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -201,8 +202,6 @@ def answer_dataset(
     )
 
 
-
-
 def save_generation_results(
     results: StudentSearchResultsAndAnswer,
     dataset_path: str,
@@ -224,6 +223,7 @@ def save_generation_results(
         )
 
     return output_path
+
 
 def run_generation_dataset(
     dataset_path: str,
