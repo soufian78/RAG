@@ -3,9 +3,8 @@ import time
 
 from .retriever import run_search_dataset, run_search
 from .indexer import run_index
-from .generator import run_generation_dataset
-
-
+from .generator import run_generation_dataset, answer_question
+from .evaluator import evaluate_search_results
 class CLI:
     """Provide command-line commands to index, search, and answer questions."""
 
@@ -31,7 +30,13 @@ class CLI:
             k=k,
         )
         print(f"Saved to: {output_path}")
-
+    
+    def answer(self, query: str, k: int = 3) -> None:
+        """Generate an answer for a single question."""
+        result = answer_question(question=query, k=k)
+        print(result)
+    
+    
     def answer_dataset(
         self,
         student_search_results_path: str = (
@@ -50,6 +55,29 @@ class CLI:
         )
 
         print(f"Saved to: {output_path}")
+
+    
+    def evaluate(
+        self,
+        student_search_results_path: str,
+        dataset_path: str,
+    ) -> None:
+        """Evaluate retrieval quality using Recall@k."""
+
+        try:
+            scores = evaluate_search_results(
+                student_search_results_path=student_search_results_path,
+                dataset_path=dataset_path,
+            )
+        except (FileNotFoundError, ValueError) as error:
+            print(f"Evaluation failed: {error}")
+            return
+
+        print("\nEvaluation Results")
+        print("=" * 30)
+
+        for cutoff, score in scores.items():
+            print(f"Recall@{cutoff}: {score:.3f}")
 
 
 if __name__ == "__main__":

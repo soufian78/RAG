@@ -1,6 +1,5 @@
-__pycache__
+__pycache__/
 *.py[cod]
-*.pyo
 *.egg-info/
 dist/
 build/
@@ -8,6 +7,9 @@ build/
 .venv/
 venv/
 env/
+.env
+.env.*
+!.env.example
 
 .mypy_cache/
 .pytest_cache/
@@ -15,19 +17,19 @@ env/
 .coverage
 htmlcov/
 
-.env
-.env.*
-!.env.example
-
 .vscode/
 .idea/
 .DS_Store
 
+data/raw/
 data/processed/
 data/output/
+data/datasets/
+
+moulinette*
+
 .cache/
 huggingface_cache/
-
 
 *.log
 *.tmp
