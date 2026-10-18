@@ -32,4 +32,5 @@ moulinette*
 huggingface_cache/
 
 *.log
-*.tmp
+*.tmpsrc/nom_du_fichier
+src/nom_du_fichier
