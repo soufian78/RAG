@@ -15,33 +15,61 @@ from typing import Any
 
 
 def build_context(chunks: list[Chunk]) -> str:
-    """Build context from retrieved chunks."""
+    """Build a numbered context from retrieved chunks."""
     context_parts = []
 
-    for chunk in chunks:
-        context_parts.append(f"File: {chunk.file_path}\n" f"{chunk.content}")
+    for i, chunk in enumerate(chunks, start=1):
+        context_parts.append(
+            f"[SOURCE {i}]\n"
+            f"File: {chunk.file_path}\n"
+            f"{chunk.content}"
+        )
 
     return "\n\n".join(context_parts)
 
 
+
 def build_prompt(question: str, context: str) -> str:
     """Create the prompt for answering a question."""
-    return f"""You are a question-answering assistant.
+    prompt = "You are a RAG agent for vLLM repository.\n"
+    prompt += (
+        "Your task is to provide a natural-language answer "
+        "to the user's query based only on the provided sources "
+        "retrieved during search.\n"
+    )
+    prompt += (
+        "Answer the question directly and concisely using "
+        "the provided sources.\n"
+        "Prefer 2 to 4 complete sentences. "
+        "Include technical details only when relevant.\n"
+        "Do not provide long lists or examples unless "
+        "the question specifically asks for them.\n"
+        "Finish your answer with a complete sentence.\n"
+    )
+    prompt += (
+        "If the sources do not contain enough information to answer, "
+        "say that the provided sources do not contain enough information.\n"
+    )
+    prompt += (
+        "Cite the specific source number that directly supports "
+        "each important factual claim, using [SOURCE n].\n"
+        "Do not cite a source unless it explicitly supports "
+        "the claim being made.\n"
+        "Distinguish examples from requirements. "
+        "Do not claim that a configuration option is required "
+        "unless the sources explicitly say so.\n"
+        "If a claim cannot be supported by the provided sources, "
+        "omit it.\n"
+    )
+    messages = [
+        {"role": "system", "content": prompt},
+        {
+            "role": "user",
+            "content": f"Sources:\n{context}\n\nQuestion: {question}",
+        },
+    ]
+    return messages
 
-        Rules:
-        1. Use only the provided context.
-        2. Copy the relevant answer sentence exactly from the context.
-        3. Do not add or invent information.
-        4. If the answer is not explicitly present, respond exactly:
-        I don't know based on the provided context.
-        5. Output only the answer, without explanations.
-
-        Context:
-        {context}
-
-        Question:
-        {question}
-        """
 
 
 def prepare_prompt(question: str, k: int = 3) -> str:
@@ -71,11 +99,12 @@ def generate_answer(prompt: str) -> str:
     messages = [
         {
             "role": "user",
-            "content": prompt + "\nAnswer briefly in one sentence.",
+            "content": "\nAnswer.",
         }
     ]
+
     text = tokenizer.apply_chat_template(
-        messages,
+        prompt + messages,
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
@@ -93,7 +122,7 @@ def generate_answer(prompt: str) -> str:
     with torch.inference_mode():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=20,
+            max_new_tokens=80,
             do_sample=False,
             use_cache=True,
             pad_token_id=tokenizer.eos_token_id,
@@ -116,21 +145,10 @@ def answer_question(question: str, k: int = 3) -> dict:
 
     found_chunks = search(question, chunks, bm25, k)
 
-    context = build_context(found_chunks)
-
-    prompt = build_prompt(question, context)
-
+    prompt = prepare_prompt(question)
     answer = generate_answer(prompt)
 
-    fallback = "I don't know based on the provided context."
-
     answer = answer.strip()
-
-    if fallback in answer:
-        answer = fallback
-
-    elif answer not in context:
-        answer = fallback
 
     sources = [chunk_to_source(chunk).model_dump() for chunk in found_chunks]
 
