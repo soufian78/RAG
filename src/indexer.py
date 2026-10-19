@@ -5,7 +5,7 @@ import pickle
 from pathlib import Path
 from rank_bm25 import BM25Okapi
 import re
-
+import ast
 
 def index_files(raw_path: str, max_chunk: int) -> list[Chunk]:
     """Read files and split them into chunks."""
@@ -37,13 +37,22 @@ def index_files(raw_path: str, max_chunk: int) -> list[Chunk]:
 
 
 def tokenize(text: str) -> list[str]:
-    """Split text into searchable tokens."""
+    """Split text into searchable tokens, handling underscores and CamelCase."""
 
+    # Split CamelCase: loadIndex -> load Index
     text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+
+    # Split acronyms: HTTPResponse -> HTTP Response
     text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+
+    # Split underscores
     text = text.replace("_", " ")
 
-    return re.findall(r"[a-z0-9]+", text.lower())
+    # Lowercase and extract tokens
+    tokens = re.findall(r"[a-z0-9]+", text.lower())
+
+    # Keep the complete normalized term and its parts.
+    return tokens
 
 
 def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
@@ -55,12 +64,33 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
     for chunk in chunks:
         tokens = tokenize(chunk.content)
 
+        # Give more weight to the filename.
         filename = Path(chunk.file_path).stem
-        tokens += tokenize(filename) * 5
+        tokens += tokenize(filename) * 4
 
+        # Add Python class and function names.
+        if chunk.file_path.endswith(".py"):
+            try:
+                tree = ast.parse(chunk.content)
+
+                for node in ast.walk(tree):
+                    if isinstance(
+                        node,
+                        (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef),
+                    ):
+                        tokens += tokenize(node.name) * 2
+
+            except SyntaxError:
+                pass
+
+        # Keep Markdown headings as searchable terms.
         if chunk.file_path.endswith(".md"):
-            HEADING_RE = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
-            headings = HEADING_RE.findall(chunk.content)
+            heading_re = re.compile(
+                r"^#{1,6}\s+(.+)$",
+                re.MULTILINE,
+            )
+            headings = heading_re.findall(chunk.content)
+
             if headings:
                 current_headings[chunk.file_path] = headings[-1]
 
@@ -71,9 +101,10 @@ def build_bm25(chunks: list[Chunk]) -> BM25Okapi:
 
     return BM25Okapi(
         tokenized_corpus,
-        k1=2.0,
+        k1=1,
         b=0.75,
     )
+
 
 
 def save_index(chunks: list[Chunk], bm25: BM25Okapi) -> None:

@@ -15,25 +15,27 @@ import re
 
 
 def tokenize(text: str) -> list[str]:
-    """Split text into searchable tokens."""
+    """Split text into searchable tokens, handling underscores and CamelCase."""
 
-    # Separate camelCase: getUser -> get User
+    # Split CamelCase: loadIndex -> load Index
     text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
 
-    # Separate acronyms from words: HTTPServer -> HTTP Server
+    # Split acronyms: HTTPResponse -> HTTP Response
     text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
 
-    # Replace underscores with spaces
+    # Split underscores
     text = text.replace("_", " ")
 
-    # Extract lowercase words and numbers
-    return re.findall(r"[a-z0-9]+", text.lower())
+    # Lowercase and extract tokens
+    tokens = re.findall(r"[a-z0-9]+", text.lower())
+
+    # Keep the complete normalized term and its parts.
+    return tokens
 
 
 def docs_bonus(chunk: Chunk) -> float:
     """Boost chunks coming from the docs."""
     return 0.5 if "/docs/" in chunk.file_path else 0.0
-
 
 def search(
     query: str,
@@ -54,10 +56,10 @@ def search(
         key=lambda i: scores[i] + docs_bonus(chunks[i]),
         reverse=True,
     )
-
+    
     return [chunks[i] for i in ranked_indices[:k]]
 
-
+    
 def chunk_to_source(chunk: Chunk) -> MinimalSource:
     """Convert a chunk into a source reference."""
 

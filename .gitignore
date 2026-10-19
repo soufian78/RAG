@@ -6,7 +6,6 @@ build/
 
 .venv/
 venv/
-env/
 .env
 .env.*
 !.env.example
@@ -14,23 +13,17 @@ env/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
-.coverage
-htmlcov/
+.cache/
+huggingface_cache/
+
+data/raw/
+data/processed/
+data/output/
 
 .vscode/
 .idea/
 .DS_Store
 
-data/raw/
-data/processed/
-data/output/
-data/datasets/
-
 moulinette*
-
-.cache/
-huggingface_cache/
-
 *.log
-*.tmpsrc/nom_du_fichier
-src/nom_du_fichier
+*.tmp
