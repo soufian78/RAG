@@ -20,16 +20,13 @@ def build_context(chunks: list[Chunk]) -> str:
 
     for i, chunk in enumerate(chunks, start=1):
         context_parts.append(
-            f"[SOURCE {i}]\n"
-            f"File: {chunk.file_path}\n"
-            f"{chunk.content}"
+            f"[SOURCE {i}]\n" f"File: {chunk.file_path}\n" f"{chunk.content}"
         )
 
     return "\n\n".join(context_parts)
 
 
-
-def build_prompt(question: str, context: str) -> str:
+def build_prompt(question: str, context: str) -> list[dict[str, str]]:
     """Create the prompt for answering a question."""
     prompt = "You are a RAG agent for vLLM repository.\n"
     prompt += (
@@ -69,7 +66,6 @@ def build_prompt(question: str, context: str) -> str:
         },
     ]
     return messages
-
 
 
 def prepare_prompt(question: str, k: int = 3) -> str:
@@ -152,11 +148,8 @@ def answer_question(question: str, k: int = 3) -> dict:
 
     sources = [chunk_to_source(chunk).model_dump() for chunk in found_chunks]
 
-    return {
-        "question": question,
-        "answer": answer,
-        "retrieved_sources": sources,
-    }
+    return {"answer": answer}
+
 
 
 def test_generation() -> None:

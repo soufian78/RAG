@@ -60,8 +60,10 @@ def evaluate_search_results(
                                 f" not found: {results_path}")
 
     if not ground_truth_path.is_file():
-        raise FileNotFoundError("Ground-truth dataset"
-                                f" not found: {ground_truth_path}")
+        raise FileNotFoundError(
+            "Ground-truth dataset"
+            f" not found: {ground_truth_path}"
+        )
 
     try:
         with results_path.open("r", encoding="utf-8") as file:
@@ -99,8 +101,9 @@ def evaluate_search_results(
     ]
 
     if not relevant_questions:
-        raise ValueError("The ground-truth "
-                         "dataset contains no questions with sources.")
+        raise ValueError(
+            "The ground-truth " "dataset contains no questions with sources."
+        )
 
     recall_totals = {cutoff: 0.0 for cutoff in cutoffs}
 

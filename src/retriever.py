@@ -15,7 +15,8 @@ import re
 
 
 def tokenize(text: str) -> list[str]:
-    """Split text into searchable tokens, handling underscores and CamelCase."""
+    """Split text into searchable tokens,
+    handling underscores and CamelCase."""
 
     # Split CamelCase: loadIndex -> load Index
     text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
@@ -37,6 +38,7 @@ def docs_bonus(chunk: Chunk) -> float:
     """Boost chunks coming from the docs."""
     return 0.5 if "/docs/" in chunk.file_path else 0.0
 
+
 def search(
     query: str,
     chunks: list[Chunk],
@@ -56,10 +58,10 @@ def search(
         key=lambda i: scores[i] + docs_bonus(chunks[i]),
         reverse=True,
     )
-    
+
     return [chunks[i] for i in ranked_indices[:k]]
 
-    
+
 def chunk_to_source(chunk: Chunk) -> MinimalSource:
     """Convert a chunk into a source reference."""
 
