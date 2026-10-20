@@ -87,8 +87,7 @@ def evaluate_search_results(
         result.question_id: result for result in student_results.search_results
     }
 
-    cutoffs = [cutoff for cutoff in (1, 3, 5, 10)
-               if cutoff <= student_results.k]
+    cutoffs = cutoffs = [1, 3, 5, 10]
 
     if not cutoffs:
         raise ValueError("No valid Recall@k cutoff is available.")
