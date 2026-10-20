@@ -189,7 +189,6 @@ def run_search_dataset(
     output_path = save_search_results(
         results=results, dataset_path=dataset_path, save_dir=save_directory
     )
-
     return output_path
 
 

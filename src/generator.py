@@ -5,8 +5,7 @@ from .models import (
     MinimalAnswer,
 )
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .retriever import load_index, search, chunk_to_source
-from functools import lru_cache
+from .retriever import load_index, search
 import json
 from pathlib import Path
 import torch
@@ -68,7 +67,7 @@ def build_prompt(question: str, context: str) -> list[dict[str, str]]:
     return messages
 
 
-def prepare_prompt(question: str, k: int = 3) -> str:
+def prepare_prompt(question: str, k: int = 3) -> list[dict[str, str]]:
     """Retrieve relevant chunks and prepare the prompt."""
 
     chunks, bm25 = load_index()
@@ -87,20 +86,12 @@ def prepare_prompt(question: str, k: int = 3) -> str:
     return prompt
 
 
-def generate_answer(prompt: str) -> str:
+def generate_answer(prompt: list[dict[str, str]]) -> Any:
     """Generate an answer using the language model."""
-    torch.set_num_threads(8)
     tokenizer, model = load_model()
 
-    messages = [
-        {
-            "role": "user",
-            "content": "\nAnswer.",
-        }
-    ]
-
     text = tokenizer.apply_chat_template(
-        prompt + messages,
+        prompt,
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
@@ -120,55 +111,24 @@ def generate_answer(prompt: str) -> str:
             **inputs,
             max_new_tokens=80,
             do_sample=False,
-            use_cache=True,
-            pad_token_id=tokenizer.eos_token_id,
         )
 
-    elapsed = time.perf_counter() - start
+    print(f"Generation time: {time.perf_counter() - start:.2f} seconds")
 
-    prompt_len = inputs["input_ids"].shape[1]
-    new_tokens = outputs[0][prompt_len:]
-
-    print(f"Generation time: {elapsed:.2f} seconds")
-
-    answer: str = str(tokenizer.decode(new_tokens, skip_special_tokens=True))
-    return answer.strip()
+    new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+    return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
 
 def answer_question(question: str, k: int = 3) -> dict:
     """Answer a question using the RAG pipeline."""
-    chunks, bm25 = load_index()
-
-    found_chunks = search(question, chunks, bm25, k)
-
     prompt = prepare_prompt(question)
     answer = generate_answer(prompt)
 
     answer = answer.strip()
 
-    sources = [chunk_to_source(chunk).model_dump() for chunk in found_chunks]
-
     return {"answer": answer}
 
 
-
-def test_generation() -> None:
-    questions = [
-        "What does the hello function do?",
-        "What is GPU memory used for?",
-        "Who invented Python?",
-    ]
-
-    for question in questions:
-        result = answer_question(question, k=2)
-
-        print("Question:", result["question"])
-        print("Answer:", result["answer"])
-        print("Sources:", result["retrieved_sources"])
-        print("-" * 40)
-
-
-@lru_cache(maxsize=1)
 def load_model() -> tuple[Any, Any]:
     model_name = "Qwen/Qwen3-0.6B"
 

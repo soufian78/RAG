@@ -6,6 +6,7 @@ from pathlib import Path
 from rank_bm25 import BM25Okapi
 import re
 import ast
+import sys
 
 
 def index_files(raw_path: str, max_chunk: int) -> list[Chunk]:
@@ -120,17 +121,17 @@ def run_index(raw_path: str = "data/raw", max_chunk: int = 2000) -> None:
 
     if max_chunk > 2000:
         print("max_chunk is too high!")
-        return
+        sys.exit(1)
 
     if max_chunk < 100:
         print("max_chunk is too low!")
-        return
+        sys.exit(1)
 
     chunks = index_files(raw_path, max_chunk)
 
     if not chunks:
         print("No chunks found.")
-        return
+        sys.exit(1)
 
     bm25 = build_bm25(chunks)
     save_index(chunks, bm25)

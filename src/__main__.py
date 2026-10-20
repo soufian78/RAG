@@ -1,9 +1,13 @@
-import fire
-
-from .retriever import run_search_dataset, run_search
-from .indexer import run_index
-from .generator import run_generation_dataset, answer_question
-from .evaluator import evaluate_search_results
+try:
+    import fire
+    from .retriever import run_search_dataset, run_search
+    from .indexer import run_index
+    from .generator import run_generation_dataset, answer_question
+    from .evaluator import evaluate_search_results
+    import sys
+except (KeyboardInterrupt, ImportError):
+    print("error ")
+    exit(1)
 
 
 class CLI:
@@ -11,10 +15,22 @@ class CLI:
 
     def index(self, max_chunk_size: int = 2000) -> None:
         """Index raw files by splitting their content into chunks."""
+        try:
+            int(max_chunk_size)
+        except ValueError:
+            print("max_chunk_size must be integer")
+            sys.exit(1)
         run_index(raw_path="data/raw", max_chunk=max_chunk_size)
 
     def search(self, query: str, k: int = 5) -> None:
         """Search the index and display the most relevant chunks."""
+        try:
+            int(k)
+            if k <= 0:
+                raise ValueError
+        except ValueError:
+            print("k must be possitive integer")
+            sys.exit(1)
         result = run_search(query=query, k=k)
         print(result.model_dump_json(indent=2))
 
@@ -30,6 +46,13 @@ class CLI:
             save_directory=save_directory,
             k=k,
         )
+        try:
+            int(k)
+            if k <= 0:
+                raise ValueError
+        except ValueError:
+            print("k must be possitive integer")
+            sys.exit(1)
         print(f"Saved to: {output_path}")
 
     def answer(self, query: str, k: int = 3) -> None:
@@ -46,7 +69,13 @@ class CLI:
         k: int = 5,
     ) -> None:
         """Generate answers for questions using retrieved search results."""
-
+        try:
+            int(k)
+            if k <= 0:
+                raise ValueError
+        except ValueError:
+            print("k must be possitive integer")
+            sys.exit(1)
         output_path = run_generation_dataset(
             dataset_path=student_search_results_path,
             save_directory=save_directory,
@@ -83,6 +112,7 @@ if __name__ == "__main__":
         fire.Fire(CLI)
     except Exception as e:
         print(e)
-        exit(1)
-    except InterruptedError as e:
+        sys.exit(1)
+    except (KeyboardInterrupt, InterruptedError) as e:
         print(e)
+        sys.exit(1)
